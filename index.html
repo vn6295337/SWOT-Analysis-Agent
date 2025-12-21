@@ -627,24 +627,68 @@
         // Auto-test the API on page load
         async function testApi() {
             try {
-                const response = await fetch('/api/health', { 
+                // Test both health and analysis endpoints
+                const healthResponse = await fetch('/api/health', { 
                     method: 'GET',
                     cache: 'no-store'
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
+                if (healthResponse.ok) {
+                    const data = await healthResponse.json();
                     console.log('✅ API is healthy:', data);
+                    
+                    // Test analysis endpoint
+                    const testResponse = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({company_name: 'Test'})
+                    });
+                    
+                    if (testResponse.ok) {
+                        console.log('✅ Analysis endpoint works');
+                    } else {
+                        console.warn('⚠️ Analysis endpoint issue:', testResponse.status);
+                    }
                 } else {
-                    console.warn('⚠️ API health check failed:', response.status);
+                    console.warn('⚠️ API health check failed:', healthResponse.status);
+                    throw new Error('API not healthy');
                 }
             } catch (error) {
                 console.error('❌ API connection error:', error);
-                // Show warning to user
+                // Show more helpful error message
                 const statusDiv = document.getElementById('status');
                 statusDiv.style.display = 'flex';
                 statusDiv.className = 'status warning';
-                statusDiv.innerHTML = '⚠️ Backend API not responding. Using demo mode.';
+                statusDiv.innerHTML = '⚠️ Backend API not responding. The Space may still be starting up. Please wait a moment and refresh.';
+                
+                // Show setup instructions
+                setTimeout(() => {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.innerHTML = `
+                        <div class="card">
+                            <h3>🛠️ Setup Instructions</h3>
+                            <p style="margin: 1rem 0;">
+                                If the API is not responding, please check:
+                            </p>
+                            <ol style="padding-left: 1.5rem;">
+                                <li><strong>Space Secrets:</strong> Ensure you have set these API keys:
+                                    <ul style="margin: 0.5rem 0 0 1rem;">
+                                        <li>GROQ_API_KEY</li>
+                                        <li>TAVILY_API_KEY</li>
+                                        <li>LANGCHAIN_API_KEY</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Space Logs:</strong> Check for any error messages</li>
+                                <li><strong>Refresh:</strong> The Space may still be starting up</li>
+                                <li><strong>Wait:</strong> Some APIs take time to initialize</li>
+                            </ol>
+                            <p style="margin: 1rem 0 0 0;">
+                                <strong>Current Status:</strong> Waiting for backend API...
+                            </p>
+                        </div>
+                    `;
+                }, 2000);
             }
         }
         
