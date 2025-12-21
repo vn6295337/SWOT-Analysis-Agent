@@ -32,10 +32,15 @@ install:
 test:
 	$(PYTHON) -m pytest $(TEST_DIR) -v
 
-# Run the Streamlit UI
+# Run the Streamlit UI (old dashboard)
 .PHONY: ui
 ui:
 	streamlit run app.py
+
+# Run the new React frontend with FastAPI backend
+.PHONY: frontend
+frontend:
+	./run_frontend.sh
 
 # Clean generated files
 .PHONY: clean
