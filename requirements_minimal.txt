@@ -1,4 +1,0 @@
-# Minimal requirements for standalone API
-fastapi==0.111.0
-uvicorn==0.30.1
-python-dotenv==1.2.1
