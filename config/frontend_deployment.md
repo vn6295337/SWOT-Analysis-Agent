@@ -90,8 +90,14 @@ The production build will be in the `dist/` directory.
 ## 🔗 API Endpoints
 
 The frontend connects to these backend endpoints:
-- `POST /api/analyze` - Start analysis
-- `GET /api/status/{workflow_id}` - Get status
-- `POST /api/process/{workflow_id}` - Process workflow
-- `GET /api/health` - Health check
-- `GET /api/swot/{workflow_id}` - Get structured SWOT data
+- `POST /analyze` - Start async analysis workflow
+- `GET /workflow/{workflow_id}/status` - Get workflow status and progress
+- `GET /workflow/{workflow_id}/result` - Get final workflow result
+- `GET /health` - Health check
+
+### New Architecture Features
+
+- **Async Workflow Execution**: Workflows run in background threads
+- **Real-time Polling**: Frontend polls for status updates every 700ms
+- **Progress Tracking**: Shows current step, revision count, and score
+- **Step Mapping**: Backend steps (Researcher, Analyst, Critic, Editor) map to UI progress

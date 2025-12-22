@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "./components/ui/button"
 import { Input } from "./components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card"
@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
 import { Progress } from "./components/ui/progress"
 import { Badge } from "./components/ui/badge"
 import { Separator } from "./components/ui/separator"
-import { startAnalysis, getAnalysisStatus, processWorkflow, checkHealth } from "./lib/api"
+import { startAnalysis, getWorkflowStatus, getWorkflowResult, checkHealth } from "./lib/api"
 import { AnalysisResponse } from "./lib/types"
 
 // Mock icons - we'll replace these with proper imports later
@@ -72,6 +72,15 @@ const loadingSteps = [
   { label: "Refining analysis", icon: RefreshCw },
 ]
 
+// Map backend step names to UI step indices
+const stepMap: Record<string, number> = {
+  starting: 0,
+  Researcher: 1,
+  Analyst: 2,
+  Critic: 3,
+  Editor: 4,
+}
+
 export default function App() {
   const [company, setCompany] = useState("Tesla")
   const [isLoading, setIsLoading] = useState(false)
@@ -80,6 +89,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("analysis")
   const [isDark, setIsDark] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null)
+  const [workflowId, setWorkflowId] = useState<string | null>(null)
+  const [revisionCount, setRevisionCount] = useState(0)
+  const [score, setScore] = useState(0)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark)
@@ -89,47 +102,70 @@ export default function App() {
     setIsLoading(true)
     setShowResults(false)
     setCurrentStep(0)
+    setRevisionCount(0)
+    setScore(0)
 
     try {
-      // Start analysis
-      const response = await startAnalysis(company)
-      const workflowId = `${company.toLowerCase().replace(' ', '_')}_workflow`
+      // Start analysis workflow
+      const { workflow_id } = await startAnalysis(company)
+      setWorkflowId(workflow_id)
       
-      // Process workflow step by step
-      for (let i = 0; i < loadingSteps.length; i++) {
-        const result = await processWorkflow(workflowId)
-        setCurrentStep(i + 1)
-        
-        // If workflow is completed, break early
-        if (result.status === "completed") {
-          break
-        }
-        
-        // Small delay to simulate processing
-        await new Promise((resolve) => setTimeout(resolve, 300))
+      // Start polling for status updates
+      const startPolling = () => {
+        pollingRef.current = setInterval(async () => {
+          try {
+            const status = await getWorkflowStatus(workflow_id)
+            
+            // Update UI with current progress
+            setRevisionCount(status.revision_count)
+            setScore(status.score)
+            
+            // Map backend step to UI step
+            const stepIndex = stepMap[status.current_step] || 0
+            setCurrentStep(stepIndex)
+            
+            // If workflow is completed, get results and stop polling
+            if (status.status === "completed") {
+              clearInterval(pollingRef.current!)
+              pollingRef.current = null
+              
+              const result = await getWorkflowResult(workflow_id)
+              setAnalysisResult(result)
+              setIsLoading(false)
+              setShowResults(true)
+            } else if (status.status === "error") {
+              clearInterval(pollingRef.current!)
+              pollingRef.current = null
+              setIsLoading(false)
+              setShowResults(true)
+              // In a real app, you'd show an error message here
+            }
+          } catch (error) {
+            console.error("Polling error:", error)
+            // Continue polling even if one request fails
+          }
+        }, 700) // Poll every 700ms
       }
-
-      // Get final results
-      const finalResult = await getAnalysisStatus(workflowId)
       
-      // Get structured SWOT data
-      const swotData = await getSwotData(workflowId)
+      startPolling()
       
-      // Combine results
-      setAnalysisResult({
-        ...finalResult,
-        swot_data: swotData
-      })
-      
-      setIsLoading(false)
-      setShowResults(true)
     } catch (error) {
-      console.error("Error during analysis:", error)
+      console.error("Error starting analysis:", error)
       setIsLoading(false)
       // Show error state
       setShowResults(true)
     }
   }
+
+  // Clean up polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [])
 
   const getScoreColor = (score: number) => {
     if (score >= 7) return "text-green-600 dark:text-green-400"
@@ -148,8 +184,8 @@ export default function App() {
   // Use analysis result if available, otherwise use sample data
   const analysisData = analysisResult || {
     company_name: company,
-    score: 8.2,
-    revision_count: 1,
+    score: score || 8.2,
+    revision_count: revisionCount || 1,
     report_length: 2847,
     critique: "The analysis provides comprehensive coverage of Tesla's strategic position. Strengths and opportunities are well-articulated with specific examples. Recommend adding more quantitative data points for market share and financial metrics. Overall quality meets professional standards.",
     swot_data: {
@@ -375,6 +411,20 @@ export default function App() {
                   value={(currentStep / loadingSteps.length) * 100}
                   className="w-64 mt-4"
                 />
+                {currentStep >= 3 && ( // Show score/revision info starting from Critic step
+                  <div className="mt-4 text-center text-sm">
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground">Current Score</p>
+                        <p className={`font-bold ${getScoreColor(score)}`}>{score}/10</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground">Revisions</p>
+                        <p className="font-bold text-foreground">{revisionCount}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
 

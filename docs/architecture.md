@@ -27,6 +27,35 @@ Researcher → Analyst → Critic → Editor → Quality Check
 
 ## Core Components
 
+### 0. Async Workflow Architecture (New)
+
+The system now implements an asynchronous workflow architecture for better user experience and real-time progress tracking:
+
+#### Workflow Registry
+- In-memory global `WORKFLOWS` dictionary
+- Tracks workflow state, progress, and results
+- Safe for single-process environments like Hugging Face Spaces
+
+#### Async Execution Flow
+```
+User Request (Company Name)
+         ↓
+   POST /analyze (async start)
+         ↓
+  Background Thread Execution
+         ↓
+   Real-time Progress Updates
+         ↓
+   GET /workflow/{id}/status (polling)
+         ↓
+   GET /workflow/{id}/result (final)
+```
+
+#### Progress Instrumentation
+- Each node updates workflow progress during execution
+- Tracks: current_step, revision_count, score
+- Frontend polls every 700ms for live updates
+
 ### 1. Workflow Engine
 
 The system implements two types of workflow graphs:

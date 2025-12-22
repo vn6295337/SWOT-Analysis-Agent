@@ -65,8 +65,16 @@ Market Position:
     return mock_data.get(company, mock_data["default"])
 
 @traceable(name="Researcher")
-def researcher_node(state):
+def researcher_node(state, workflow_id=None, progress_store=None):
     company = state["company_name"]
+    
+    # Update progress if tracking is enabled
+    if workflow_id and progress_store:
+        progress_store[workflow_id].update({
+            "current_step": "Researcher",
+            "revision_count": state.get("revision_count", 0),
+            "score": state.get("score", 0)
+        })
     
     # Try to use real Tavily client if available
     client = get_tavily_client()

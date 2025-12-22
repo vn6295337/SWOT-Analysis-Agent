@@ -3,7 +3,7 @@ from langsmith import traceable
 import json
 
 @traceable(name="Critic")
-def critic_node(state):
+def critic_node(state, workflow_id=None, progress_store=None):
     """
     Critic node that evaluates the SWOT draft using a scoring rubric.
     Scores on a scale of 1-10 and provides reasoning for the score.
@@ -53,11 +53,27 @@ Strategic Focus: Cost Leadership
         state["score"] = parsed.get("score", 0)
         print(f"📊 Critic scored: {state['score']}/10")
         print(f"💬 Critique: {state['critique'][:100]}...")
+        
+        # Update progress with new score
+        if workflow_id and progress_store:
+            progress_store[workflow_id].update({
+                "current_step": "Critic",
+                "revision_count": state.get("revision_count", 0),
+                "score": state["score"]
+            })
     except (json.JSONDecodeError, AttributeError) as e:
         # Fallback if JSON parsing fails
         print(f"❌ JSON parsing error: {e}")
         print(f"🤖 Raw response: {response.content}")
         state["critique"] = "Evaluation failed - could not parse response"
         state["score"] = 5  # Default medium score
+        
+        # Update progress with fallback score
+        if workflow_id and progress_store:
+            progress_store[workflow_id].update({
+                "current_step": "Critic",
+                "revision_count": state.get("revision_count", 0),
+                "score": state["score"]
+            })
     
     return state
