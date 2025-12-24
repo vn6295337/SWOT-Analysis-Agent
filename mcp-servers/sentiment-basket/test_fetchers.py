@@ -6,7 +6,6 @@ Usage:
 """
 
 import asyncio
-import os
 import json
 from pathlib import Path
 
@@ -25,10 +24,8 @@ for env_path in env_paths:
 from server import (
     fetch_finnhub_sentiment,
     fetch_reddit_sentiment,
-    fetch_youtube_sentiment,
     get_full_sentiment_basket,
     FINNHUB_API_KEY,
-    YOUTUBE_API_KEY,
     VADER_AVAILABLE
 )
 
@@ -57,14 +54,6 @@ async def test_reddit(ticker: str = "AAPL"):
     return result
 
 
-async def test_youtube(company_name: str = "Apple", ticker: str = "AAPL"):
-    """Test YouTube sentiment fetcher."""
-    print(f"\n[YouTube] API Key configured: {'Yes' if YOUTUBE_API_KEY else 'No'}")
-    result = await fetch_youtube_sentiment(company_name, ticker)
-    print_result(f"YouTube Sentiment - {company_name}", result)
-    return result
-
-
 async def test_full_basket(ticker: str = "AAPL", company_name: str = "Apple"):
     """Test full sentiment basket."""
     print(f"\n[Full Basket] Testing {ticker} ({company_name})")
@@ -83,7 +72,6 @@ async def run_all_tests():
     print("\n[Prerequisites]")
     print(f"  VADER Sentiment: {'Installed' if VADER_AVAILABLE else 'NOT INSTALLED - pip install vaderSentiment'}")
     print(f"  FINNHUB_API_KEY: {'Set' if FINNHUB_API_KEY else 'Not set'}")
-    print(f"  YOUTUBE_API_KEY: {'Set' if YOUTUBE_API_KEY else 'Not set'}")
 
     # Run tests
     ticker = "TSLA"
@@ -94,7 +82,6 @@ async def run_all_tests():
 
     await test_finnhub(ticker)
     await test_reddit(ticker)
-    await test_youtube(company, ticker)
     await test_full_basket(ticker, company)
 
     print("\n" + "="*60)

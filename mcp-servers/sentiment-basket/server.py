@@ -2,9 +2,8 @@
 Sentiment Basket MCP Server
 
 Aggregates sentiment metrics from multiple free sources for SWOT analysis:
-- Finnhub News Sentiment → Pre-processed bullish/bearish scores
-- Reddit (PRAW + VADER) → Retail investor sentiment from r/WallStreetBets, r/stocks
-- YouTube Comments → Consumer sentiment on product/company videos
+- Finnhub News Sentiment → News articles analyzed with VADER
+- Reddit → Retail investor sentiment from r/WallStreetBets, r/stocks
 
 Usage:
     python server.py
@@ -17,10 +16,8 @@ import asyncio
 import json
 import logging
 import os
-import re
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 # Load environment variables from .env
 from dotenv import load_dotenv
@@ -59,7 +56,6 @@ server = Server("sentiment-basket")
 
 # API Keys
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")  # Get free key: https://finnhub.io/register
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY") or os.getenv("API_KEY")  # Get from: https://console.cloud.google.com/
 
 # Initialize VADER if available
 vader = SentimentIntensityAnalyzer() if VADER_AVAILABLE else None
@@ -281,151 +277,6 @@ async def fetch_reddit_sentiment(ticker: str, company_name: str = "") -> dict:
         }
 
 
-async def fetch_youtube_sentiment(company_name: str, ticker: str = "") -> dict:
-    """
-    Fetch sentiment from YouTube comments on company-related videos.
-    Searches for recent videos about the company and analyzes comment sentiment.
-
-    Best for B2C companies with product videos/reviews.
-    """
-    if not YOUTUBE_API_KEY:
-        return {
-            "metric": "YouTube Sentiment",
-            "company": company_name,
-            "error": "YOUTUBE_API_KEY not configured. Get key at https://console.cloud.google.com/"
-        }
-
-    if not VADER_AVAILABLE:
-        return {
-            "metric": "YouTube Sentiment",
-            "company": company_name,
-            "error": "VADER sentiment analyzer not installed"
-        }
-
-    try:
-        async with httpx.AsyncClient() as client:
-            # Search for videos about the company
-            search_url = "https://www.googleapis.com/youtube/v3/search"
-            search_params = {
-                "part": "snippet",
-                "q": f"{company_name} stock" if ticker else company_name,
-                "type": "video",
-                "order": "date",
-                "maxResults": 5,
-                "publishedAfter": (datetime.now() - timedelta(days=30)).isoformat() + "Z",
-                "key": YOUTUBE_API_KEY
-            }
-
-            search_response = await client.get(search_url, params=search_params, timeout=10)
-            search_data = search_response.json()
-
-            if "error" in search_data:
-                return {
-                    "metric": "YouTube Sentiment",
-                    "company": company_name,
-                    "error": search_data.get("error", {}).get("message", "API error")
-                }
-
-            videos = search_data.get("items", [])
-
-            if not videos:
-                return {
-                    "metric": "YouTube Sentiment",
-                    "company": company_name,
-                    "score": 50,
-                    "comments_analyzed": 0,
-                    "interpretation": "No recent videos found",
-                    "swot_category": "NEUTRAL",
-                    "source": "YouTube",
-                    "as_of": datetime.now().isoformat()
-                }
-
-            # Collect comments from each video
-            total_score = 0
-            comment_count = 0
-
-            for video in videos:
-                video_id = video.get("id", {}).get("videoId")
-                if not video_id:
-                    continue
-
-                comments_url = "https://www.googleapis.com/youtube/v3/commentThreads"
-                comments_params = {
-                    "part": "snippet",
-                    "videoId": video_id,
-                    "maxResults": 20,
-                    "order": "relevance",
-                    "key": YOUTUBE_API_KEY
-                }
-
-                try:
-                    comments_response = await client.get(comments_url, params=comments_params, timeout=10)
-                    comments_data = comments_response.json()
-
-                    for item in comments_data.get("items", []):
-                        comment_text = item.get("snippet", {}).get("topLevelComment", {}).get("snippet", {}).get("textDisplay", "")
-
-                        # Clean HTML tags
-                        comment_text = re.sub(r'<[^>]+>', '', comment_text)
-
-                        if comment_text:
-                            scores = vader.polarity_scores(comment_text)
-                            total_score += scores["compound"]
-                            comment_count += 1
-                except:
-                    continue
-
-            if comment_count == 0:
-                return {
-                    "metric": "YouTube Sentiment",
-                    "company": company_name,
-                    "score": 50,
-                    "comments_analyzed": 0,
-                    "interpretation": "No comments available for analysis",
-                    "swot_category": "NEUTRAL",
-                    "source": "YouTube",
-                    "as_of": datetime.now().isoformat()
-                }
-
-            avg_sentiment = total_score / comment_count
-            score = (avg_sentiment + 1) * 50
-
-            if score >= 65:
-                interpretation = "Positive YouTube sentiment - Favorable viewer comments"
-                swot_impact = "STRENGTH"
-            elif score >= 50:
-                interpretation = "Neutral YouTube sentiment - Mixed viewer reactions"
-                swot_impact = "NEUTRAL"
-            elif score >= 35:
-                interpretation = "Negative YouTube sentiment - Critical viewer comments"
-                swot_impact = "WEAKNESS"
-            else:
-                interpretation = "Very negative YouTube sentiment - Strong viewer criticism"
-                swot_impact = "THREAT"
-
-            return {
-                "metric": "YouTube Sentiment",
-                "company": company_name,
-                "ticker": ticker.upper() if ticker else None,
-                "score": round(score, 2),
-                "sentiment_raw": round(avg_sentiment, 3),
-                "comments_analyzed": comment_count,
-                "videos_checked": len(videos),
-                "interpretation": interpretation,
-                "swot_category": swot_impact,
-                "source": "YouTube",
-                "as_of": datetime.now().isoformat()
-            }
-
-    except Exception as e:
-        logger.error(f"YouTube sentiment error: {e}")
-        return {
-            "metric": "YouTube Sentiment",
-            "company": company_name,
-            "error": str(e)
-        }
-
-
 async def get_full_sentiment_basket(ticker: str, company_name: str = "") -> dict:
     """
     Fetch all sentiment metrics for a given ticker/company.
@@ -437,9 +288,8 @@ async def get_full_sentiment_basket(ticker: str, company_name: str = "") -> dict
     # Fetch all metrics concurrently
     finnhub_task = fetch_finnhub_sentiment(ticker)
     reddit_task = fetch_reddit_sentiment(ticker, company_name)
-    youtube_task = fetch_youtube_sentiment(company_name, ticker)
 
-    finnhub, reddit, youtube = await asyncio.gather(finnhub_task, reddit_task, youtube_task)
+    finnhub, reddit = await asyncio.gather(finnhub_task, reddit_task)
 
     # Aggregate SWOT impacts
     swot_summary = {
@@ -453,7 +303,7 @@ async def get_full_sentiment_basket(ticker: str, company_name: str = "") -> dict
     scores = []
     weights = []
 
-    for metric, weight in [(finnhub, 0.4), (reddit, 0.4), (youtube, 0.2)]:
+    for metric, weight in [(finnhub, 0.5), (reddit, 0.5)]:
         if "error" not in metric and "score" in metric:
             scores.append(metric["score"])
             weights.append(weight)
@@ -499,8 +349,7 @@ async def get_full_sentiment_basket(ticker: str, company_name: str = "") -> dict
         "overall_swot_category": overall_swot,
         "metrics": {
             "finnhub": finnhub,
-            "reddit": reddit,
-            "youtube": youtube
+            "reddit": reddit
         },
         "swot_summary": swot_summary,
         "generated_at": datetime.now().isoformat()
@@ -517,7 +366,7 @@ async def list_tools():
     return [
         Tool(
             name="get_finnhub_sentiment",
-            description="Get pre-processed news sentiment from Finnhub. Returns bullish/bearish ratio and sentiment score (0-100).",
+            description="Get news sentiment from Finnhub company news analyzed with VADER. Returns sentiment score (0-100).",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -548,26 +397,8 @@ async def list_tools():
             }
         ),
         Tool(
-            name="get_youtube_sentiment",
-            description="Get consumer sentiment from YouTube video comments. Best for B2C companies with product presence.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "company_name": {
-                        "type": "string",
-                        "description": "Company name to search for"
-                    },
-                    "ticker": {
-                        "type": "string",
-                        "description": "Optional stock ticker"
-                    }
-                },
-                "required": ["company_name"]
-            }
-        ),
-        Tool(
             name="get_sentiment_basket",
-            description="Get full sentiment basket (Finnhub, Reddit, YouTube) with composite score and SWOT summary.",
+            description="Get full sentiment basket (Finnhub + Reddit) with composite score and SWOT summary.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -602,13 +433,6 @@ async def call_tool(name: str, arguments: dict):
             if not ticker:
                 return [TextContent(type="text", text="Error: ticker is required")]
             result = await fetch_reddit_sentiment(ticker, company_name)
-
-        elif name == "get_youtube_sentiment":
-            company_name = arguments.get("company_name", "")
-            ticker = arguments.get("ticker", "")
-            if not company_name:
-                return [TextContent(type="text", text="Error: company_name is required")]
-            result = await fetch_youtube_sentiment(company_name, ticker)
 
         elif name == "get_sentiment_basket":
             ticker = arguments.get("ticker", "").upper()

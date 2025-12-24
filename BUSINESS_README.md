@@ -68,27 +68,27 @@ With MCP:     Agent → [calls tool] → MCP Server → API
 
 Official financial data from SEC filings. No API key required.
 
-| # | Metric | Purpose | Primary Source | Secondary Source |
-|---|--------|---------|----------------|------------------|
-| 1 | Revenue | Company's total sales | SEC EDGAR XBRL | - |
-| 2 | Net Income | Profit after all expenses | SEC EDGAR XBRL | - |
-| 3 | Gross Margin | Pricing power indicator | SEC EDGAR XBRL | - |
-| 4 | Operating Margin | Operational efficiency | SEC EDGAR XBRL | - |
-| 5 | Net Margin | Overall profitability | SEC EDGAR XBRL | - |
-| 6 | Revenue Growth (3yr) | Business momentum | SEC EDGAR XBRL | - |
-| 7 | Total Assets | Company size/resources | SEC EDGAR XBRL | - |
-| 8 | Total Liabilities | Obligations owed | SEC EDGAR XBRL | - |
-| 9 | Stockholders Equity | Net worth | SEC EDGAR XBRL | - |
-| 10 | Long-term Debt | Future obligations | SEC EDGAR XBRL | - |
-| 11 | Short-term Debt | Near-term obligations | SEC EDGAR XBRL | - |
-| 12 | Debt-to-Equity | Leverage/risk level | SEC EDGAR XBRL | - |
-| 13 | Operating Cash Flow | Cash from operations | SEC EDGAR XBRL | - |
-| 14 | Capital Expenditure | Investment in growth | SEC EDGAR XBRL | - |
-| 15 | Free Cash Flow | Cash after investments | SEC EDGAR XBRL | - |
-| 16 | R&D Expense | Innovation investment | SEC EDGAR XBRL | - |
-| 17 | 8-K Material Events | Bankruptcy, impairments, exec changes | SEC EDGAR Filings | - |
-| 18 | Ownership Changes | 5%+ ownership, insider trades | SEC EDGAR (13D/13G, Form 4) | - |
-| 19 | Going Concern | Financial distress warnings | SEC EDGAR 10-K text | - |
+| #   | Metric               | Purpose                               | Primary Source              | Secondary Source |
+| --- | -------------------- | ------------------------------------- | --------------------------- | ---------------- |
+| 1   | Revenue              | Company's total sales                 | SEC EDGAR XBRL              | -                |
+| 2   | Net Income           | Profit after all expenses             | SEC EDGAR XBRL              | -                |
+| 3   | Gross Margin         | Pricing power indicator               | SEC EDGAR XBRL              | -                |
+| 4   | Operating Margin     | Operational efficiency                | SEC EDGAR XBRL              | -                |
+| 5   | Net Margin           | Overall profitability                 | SEC EDGAR XBRL              | -                |
+| 6   | Revenue Growth (3yr) | Business momentum                     | SEC EDGAR XBRL              | -                |
+| 7   | Total Assets         | Company size/resources                | SEC EDGAR XBRL              | -                |
+| 8   | Total Liabilities    | Obligations owed                      | SEC EDGAR XBRL              | -                |
+| 9   | Stockholders Equity  | Net worth                             | SEC EDGAR XBRL              | -                |
+| 10  | Long-term Debt       | Future obligations                    | SEC EDGAR XBRL              | -                |
+| 11  | Short-term Debt      | Near-term obligations                 | SEC EDGAR XBRL              | -                |
+| 12  | Debt-to-Equity       | Leverage/risk level                   | SEC EDGAR XBRL              | -                |
+| 13  | Operating Cash Flow  | Cash from operations                  | SEC EDGAR XBRL              | -                |
+| 14  | Capital Expenditure  | Investment in growth                  | SEC EDGAR XBRL              | -                |
+| 15  | Free Cash Flow       | Cash after investments                | SEC EDGAR XBRL              | -                |
+| 16  | R&D Expense          | Innovation investment                 | SEC EDGAR XBRL              | -                |
+| 17  | 8-K Material Events  | Bankruptcy, impairments, exec changes | SEC EDGAR Filings           | -                |
+| 18  | Ownership Changes    | 5%+ ownership, insider trades         | SEC EDGAR (13D/13G, Form 4) | -                |
+| 19  | Going Concern        | Financial distress warnings           | SEC EDGAR 10-K text         | -                |
 
 ### Volatility Basket (Market Risk)
 
@@ -141,9 +141,8 @@ Market sentiment indicators from multiple free sources.
 
 | # | Metric | Purpose | Primary Source | Secondary Source |
 |---|--------|---------|----------------|------------------|
-| 37 | News Sentiment | Bullish/bearish news score | Finnhub | - |
-| 38 | Retail Sentiment | WallStreetBets/stocks buzz | Reddit (VADER) | - |
-| 39 | Consumer Sentiment | Product/brand perception | YouTube (VADER) | - |
+| 37 | News Sentiment | Bullish/bearish news score | Finnhub + VADER | - |
+| 38 | Retail Sentiment | WallStreetBets/stocks buzz | Reddit + VADER | - |
 
 ---
 
@@ -156,22 +155,21 @@ Market sentiment indicators from multiple free sources.
 | 3 | Macro | ✓ Done | 24-27 |
 | 4 | Valuation | ✓ Done | 28-32 |
 | 5 | News | ✓ Done | 33-36 |
-| 6 | Sentiment | ✓ Done | 37-39 |
+| 6 | Sentiment | ✓ Done | 37-38 |
 
 ---
 
 ## API Keys Required
 
-| MCP Server        | API Key | Cost                    | Registration                                      |
-| ----------------- | ------- | ----------------------- | ------------------------------------------------- |
-| Financials Basket | None    | Free                    | -                                                 |
-| Volatility Basket | FRED    | Free                    | https://fred.stlouisfed.org/docs/api/api_key.html |
-| Macro Basket      | FRED    | Free                    | https://fred.stlouisfed.org/docs/api/api_key.html |
-| Valuation Basket  | None    | Free                    | -                                                 |
-| News Basket       | Tavily  | Free (1,000/month)      | https://tavily.com                                |
-| Sentiment Basket  | Finnhub | Free (60 calls/min)     | https://finnhub.io/register                       |
-| Sentiment Basket  | None    | Free (100 req/min)      | -                                                 |
-| Sentiment Basket  | YouTube | Free (10,000 units/day) | https://console.cloud.google.com/                 |
+| MCP Server        | API Key | Cost                | Registration                                      |
+| ----------------- | ------- | ------------------- | ------------------------------------------------- |
+| Financials Basket | SEC     | Free                | -                                                 |
+| Volatility Basket | FRED    | Free                | https://fred.stlouisfed.org/docs/api/api_key.html |
+| Macro Basket      | FRED    | Free                | https://fred.stlouisfed.org/docs/api/api_key.html |
+| Valuation Basket  | None    | Free                | -                                                 |
+| News Basket       | Tavily  | Free (1,000/month)  | https://tavily.com                                |
+| Sentiment Basket  | Finnhub | Free (60 calls/min) | https://finnhub.io/register                       |
+| Sentiment Basket  | Reddit  | Free (100 req/min)  | -                                                 |
 
 ---
 
