@@ -3,86 +3,216 @@ title: A2A Strategy Agent
 emoji: 🤖
 colorFrom: blue
 colorTo: purple
-sdk: static
-app_port: 8002
+sdk: streamlit
+app_file: app.py
 pinned: false
 ---
 
-# ✨ A2A Strategy Agent
+# A2A Strategy Agent
 
-**AI-Powered Strategic Analysis with Self-Correcting Quality Control**
+**Agentic AI Demo: Multi-Agent Workflow with Self-Correcting Quality Control**
 
-## ✨ Overview
+## The Problem
 
-The A2A Strategy Agent is an advanced AI system that generates comprehensive SWOT analyses for companies with automatic quality improvement through a self-correcting loop. The system combines real-time data gathering, strategic analysis, quality evaluation, and iterative improvement to deliver high-quality business insights.
+Strategic analysis is time-consuming and quality varies widely. Analysts spend hours gathering data and drafting reports, with no systematic quality checks until peer review—often too late in the process.
 
-## ✨ Live Demo & Usage
+## The Solution
 
-**Self-Service Demo:** https://huggingface.co/spaces/vn6295337/A2A-strategy-agent
+This demo implements an **agentic AI pattern** where specialized agents collaborate autonomously: one gathers data, another drafts analysis, a third evaluates quality, and a fourth revises until standards are met. The self-correcting loop eliminates the "first draft = final draft" problem common in LLM applications.
 
-### Demo Video
+## Why This Matters
 
-[Produce Video Demo](https://github.com/vn6295337/A2A-strategy-agent/issues/1)
+Most enterprise AI deployments fail not from bad models, but from lack of quality gates. This architecture demonstrates how to build reliability into AI workflows—a pattern applicable to any domain requiring consistent output quality.
 
-## ✨ Features
+## Live Demo
 
-### 1. **Intelligent Data Gathering**
-- Real-time web search using Tavily API
-- LLM-powered data summarization
-- Clean, structured input for analysis
+**Try it:** https://huggingface.co/spaces/vn6295337/A2A-strategy-agent
 
-### 2. **Strategic SWOT Analysis**
-- Context-aware SWOT generation
-- Focus on Cost Leadership strategy
-- Comprehensive business insights
-- Structured output format
+## Architecture
 
-### 3. **Automatic Quality Control**
-- AI-powered evaluation (1-10 scoring)
-- Objective quality assessment
-- Transparent scoring criteria
-- Detailed critique and reasoning
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERFACE                                  │
+│                         (Streamlit / [TODO: React])                         │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          ORCHESTRATION (LangGraph)                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  Researcher  │─▶│   Analyst    │─▶│    Critic    │─▶│    Editor    │    │
+│  │              │  │  (SWOT Gen)  │  │  (Scoring)   │  │  (Revision)  │    │
+│  └──────────────┘  └──────────────┘  └──────┬───────┘  └───────┬──────┘    │
+│                                             │   score < 7      │           │
+│                                             │◀─────────────────┘           │
+│                                             ▼                              │
+│                                      score ≥ 7 or 3 revisions → [END]      │
+└─────────────────────────────────────────────┬───────────────────────────────┘
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    │                         │                         │
+                    ▼                         ▼                         ▼
+┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
+│  1. FINANCIALS BASKET     │ │  2. VOLATILITY BASKET     │ │  3. MACRO BASKET          │
+│     (MCP Server) ✓        │ │     (MCP Server) ✓        │ │     (MCP Server) ✓        │
+├───────────────────────────┤ ├───────────────────────────┤ ├───────────────────────────┤
+│ • get_financials          │ │ • get_vix                 │ │ • get_gdp                 │
+│ • get_debt_metrics        │ │ • get_beta                │ │ • get_interest_rates      │
+│ • get_cash_flow           │ │ • get_historical_vol      │ │ • get_cpi                 │
+│ • get_material_events     │ │ • get_implied_vol         │ │ • get_unemployment        │
+│ • get_ownership_filings   │ │ • get_volatility_basket   │ │ • get_macro_basket        │
+│ • get_going_concern       │ │                           │ │                           │
+│ • get_sec_fundamentals    │ │                           │ │                           │
+└─────────────┬─────────────┘ └─────────────┬─────────────┘ └─────────────┬─────────────┘
+              │                             │                             │
+              ▼                             ▼                             ▼
+┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
+│      SEC EDGAR API        │ │  FRED API + Yahoo Finance │ │         FRED API          │
+│      (Free, Public)       │ │  (Free with API Key)      │ │      (Free with Key)      │
+└───────────────────────────┘ └───────────────────────────┘ └───────────────────────────┘
 
-### 4. **Self-Correcting Loop**
-- Automatic revision when quality < 7/10
-- Iterative quality enhancement
-- Maximum 3 revisions per analysis
-- Intelligent exit when quality threshold met
+┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
+│  4. VALUATION BASKET      │ │  5. NEWS BASKET           │ │  6. SENTIMENT BASKET      │
+│     (MCP Server) ✓        │ │     (MCP Server) ✓        │ │     (MCP Server) [TODO]   │
+├───────────────────────────┤ ├───────────────────────────┤ ├───────────────────────────┤
+│ • get_pe_ratio            │ │ • search_company_news     │ │ • get_social_sentiment    │
+│ • get_ps_ratio            │ │ • search_going_concern    │ │ • get_analyst_ratings     │
+│ • get_pb_ratio            │ │ • search_industry_trends  │ │                           │
+│ • get_ev_ebitda           │ │ • search_competitor_news  │ │                           │
+│ • get_valuation_basket    │ │ • tavily_search           │ │                           │
+└─────────────┬─────────────┘ └─────────────┬─────────────┘ └─────────────┬─────────────┘
+              │                             │                             │
+              ▼                             ▼                             ▼
+┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
+│    Yahoo + SEC EDGAR      │ │       Tavily API          │ │   [TBD - Limited Free]    │
+│      (Free/Public)        │ │  (Free 1,000/month)       │ │                           │
+└───────────────────────────┘ └───────────────────────────┘ └───────────────────────────┘
 
-### 5. **Enterprise Observability**
-- LangSmith tracing integration
-- Complete workflow visualization
-- Quality metrics tracking
-- Revision history preservation
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           [TODO: INFRASTRUCTURE]                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • [TODO] Vector DB - Historical analysis storage                            │
+│ • [TODO] Human-in-the-Loop - Approval workflow for high-stakes decisions    │
+│ • [TODO] Caching Layer - Reduce API calls, improve latency                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-### 6. **Professional Web Interface**
-- Streamlit-based web application
-- Intuitive user experience
-- Visual quality indicators
-- Comprehensive process explanation
+### MCP Baskets Summary
 
-## ✨ How It Works
+| # | Basket | Status | Source | Key Metrics |
+|---|--------|--------|--------|-------------|
+| 1 | Financials | ✓ Done | SEC EDGAR | Revenue, Margins, Debt, Cash Flow, 8-K, Ownership |
+| 2 | Volatility | ✓ Done | FRED + Yahoo | VIX, Beta, Historical Vol, Implied Vol |
+| 3 | Macro | ✓ Done | FRED | GDP, CPI, Interest Rates, Unemployment |
+| 4 | Valuation | ✓ Done | Yahoo + SEC | P/E, P/S, P/B, EV/EBITDA, PEG |
+| 5 | News | ✓ Done | Tavily | Company News, Industry Trends, Competitors |
+| 6 | Sentiment | TODO | TBD | Social Media, Analyst Ratings |
 
-The A2A Strategy Agent follows a sophisticated 4-step process:
+### Data Flow
 
-1. **Researcher** → Gathers real-time data about the company
-2. **Analyst** → Creates initial SWOT analysis draft
-3. **Critic** → Evaluates quality and provides score/critique
-4. **Editor** → Improves draft if quality < 7/10 (loop)
+```
+User Input (Company) → Researcher → [MCP Servers] → Raw Data
+                                         ↓
+Raw Data → Analyst → SWOT Draft → Critic → Score
+                                     ↓
+                        Score < 7 → Editor → Revised Draft → Critic
+                        Score ≥ 7 → Final Output → User
+```
 
-The loop continues until quality ≥ 7/10 or maximum 3 revisions are reached.
+## Features
 
-## ✨ User Interface
+| Agent | Role | Implementation |
+|-------|------|----------------|
+| **Researcher** | Gathers real-time company data | Tavily API + LLM summarization |
+| **Analyst** | Drafts SWOT based on selected strategy | Prompt-engineered generation |
+| **Critic** | Scores output 1-10 with reasoning | Rubric-based evaluation |
+| **Editor** | Revises based on critique | Targeted improvement |
 
-The Streamlit interface provides:
+**Supported Strategies:** Cost Leadership, Differentiation, Focus/Niche
 
-- **Company Input**: Enter any company name for analysis
-- **SWOT Analysis Tab**: View the complete strategic analysis
-- **Quality Evaluation Tab**: See score, revisions, and critique
-- **Process Details Tab**: Understand how the analysis was created
-- **Visual Feedback**: Progress bars and color-coded quality indicators
+## MCP Data Servers
 
-## ✨ Installation & Setup
+Model Context Protocol (MCP) servers provide structured data access for AI agents. See [BUSINESS_README.md](BUSINESS_README.md) for detailed explanation.
+
+### Financials Basket
+
+| Location | Metric | Tool |
+|----------|--------|------|
+| `mcp-servers/financials-basket/` | Revenue, Net Income, Margins | `get_financials` |
+| | Debt, Debt-to-Equity | `get_debt_metrics` |
+| | Operating CF, CapEx, FCF, R&D | `get_cash_flow` |
+| | 8-K Material Events | `get_material_events` |
+| | 13D/13G, Form 4 (Ownership) | `get_ownership_filings` |
+| | Going Concern Warnings | `get_going_concern` |
+| | All Metrics + SWOT | `get_sec_fundamentals` |
+
+### Volatility Basket
+
+| Location | Metric | Tool |
+|----------|--------|------|
+| `mcp-servers/volatility-basket/` | VIX Index | `get_vix` |
+| | Beta (vs S&P 500) | `get_beta` |
+| | Historical Volatility | `get_historical_volatility` |
+| | Implied Volatility | `get_implied_volatility` |
+| | All Metrics + SWOT | `get_volatility_basket` |
+
+### Macro Basket
+
+| Location | Metric | Tool |
+|----------|--------|------|
+| `mcp-servers/macro-basket/` | GDP Growth Rate | `get_gdp` |
+| | Federal Funds Rate | `get_interest_rates` |
+| | CPI / Inflation | `get_cpi` |
+| | Unemployment Rate | `get_unemployment` |
+| | All Metrics + SWOT | `get_macro_basket` |
+
+### Valuation Basket
+
+| Location | Metric | Tool |
+|----------|--------|------|
+| `mcp-servers/valuation-basket/` | P/E Ratio | `get_pe_ratio` |
+| | P/S Ratio | `get_ps_ratio` |
+| | P/B Ratio | `get_pb_ratio` |
+| | EV/EBITDA | `get_ev_ebitda` |
+| | PEG Ratio | `get_peg_ratio` |
+| | All Metrics + SWOT | `get_valuation_basket` |
+
+### News Basket
+
+| Location | Metric | Tool |
+|----------|--------|------|
+| `mcp-servers/news-basket/` | General Web Search | `tavily_search` |
+| | Company News | `search_company_news` |
+| | Going Concern News | `search_going_concern_news` |
+| | Industry Trends | `search_industry_trends` |
+| | Competitor News | `search_competitor_news` |
+
+### API Endpoints
+
+| MCP Server | API | Endpoint | Auth |
+|------------|-----|----------|------|
+| **Financials Basket** | SEC EDGAR | `https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json` | None (free) |
+| | | `https://data.sec.gov/submissions/CIK{cik}.json` | |
+| **Volatility Basket** | FRED | `https://api.stlouisfed.org/fred/series/observations` | API Key |
+| | Yahoo Finance | `https://query1.finance.yahoo.com/v8/finance/chart/{ticker}` | None |
+| **Macro Basket** | FRED | `https://api.stlouisfed.org/fred/series/observations` | API Key |
+| **Valuation Basket** | Yahoo Finance | `https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticker}` | None |
+| **News Basket** | Tavily | `https://api.tavily.com/search` | API Key |
+
+### API Keys
+
+| Key | Environment Variable | Get From |
+|-----|---------------------|----------|
+| FRED | `FRED_VIX_API_KEY` | https://fred.stlouisfed.org/docs/api/api_key.html |
+| Tavily | `TAVILY_API_KEY` | https://tavily.com |
+
+Store in `~/.env`:
+```
+FRED_VIX_API_KEY=your_key
+TAVILY_API_KEY=tvly-your_key
+```
+
+## Installation & Setup
 
 ### Local Development
 
@@ -108,25 +238,22 @@ streamlit run app.py
 
 ### Hugging Face Spaces Deployment
 
-1. **Create a new Space** (Streamlit type)
+1. **Create a new Space** (Streamlit SDK)
 2. **Add this repository** as the source
-3. **Set up Secrets** with required API keys:
-   - `GROQ_API_KEY`
-   - `LANGCHAIN_API_KEY`
-   - `TAVILY_API_KEY`
-4. **Enable LangSmith tracing** (optional but recommended)
+3. **Set up Secrets** (at least one LLM provider required):
+   - `GROQ_API_KEY` (primary, recommended)
+   - `GEMINI_API_KEY` (fallback)
+   - `OPENROUTER_API_KEY` (fallback)
+   - `TAVILY_API_KEY` (for live search data)
+4. The system automatically falls back through providers if one fails
 
-## ✨ Requirements
+## Requirements
 
 - Python 3.11+
-- Streamlit 1.36.0
-- LangChain 1.1.3+
-- LangGraph 1.0.4+
-- Groq API access
-- Tavily API access (for web search)
-- LangSmith account (for tracing)
+- At least one LLM API key (Groq, Gemini, or OpenRouter)
+- Tavily API key (optional, for live search data)
 
-## ✨ Usage Examples
+## Usage Examples
 
 ### Basic Usage
 ```bash
@@ -138,49 +265,53 @@ Then enter a company name (e.g., "Tesla", "NVIDIA", "Microsoft") and click "Gene
 ```python
 from src.graph_cyclic import run_self_correcting_workflow
 
-# Generate SWOT analysis for a company
-result = run_self_correcting_workflow("Apple")
+# Generate SWOT analysis with specific strategy
+result = run_self_correcting_workflow("Apple", strategy_focus="Differentiation")
 
 print(f"Score: {result['score']}/10")
 print(f"Revisions: {result['revision_count']}")
 print(f"SWOT Analysis:\n{result['draft_report']}")
 ```
 
-## ✨ Testing
-
-The system includes comprehensive tests:
+## Testing
 
 ```bash
-# Test Streamlit functionality
-python3 test_streamlit.py
-
-# Test self-correcting loop
-python3 src/test_simple_failure.py
+# Test the self-correcting workflow
+python3 tests/test_self_correcting_loop.py
 ```
 
-## ✨ Performance
+## Technical Characteristics
 
-- **Analysis Time**: 3-5 seconds per company
-- **Quality Improvement**: 30-50% enhancement through loop
-- **Success Rate**: 95%+ quality scores ≥ 7/10
-- **Scalability**: Ready for production deployment
+- **Analysis Time**: Typically under 10 seconds (depends on API latency)
+- **Quality Loop**: Iterates until score ≥ 7/10 or max 3 revisions
+- **LLM Providers**: Groq (primary) → Gemini → OpenRouter (cascading fallback)
+- **Data Source**: Tavily API for real-time web search (mock data fallback)
 
-## ✨ Roadmap
+## Design Decisions
 
-### Short-Term
-- Expand strategy database (Differentiation, Focus, Innovation)
-- Enhance analysis with financial ratios
-- Add user authentication
-- Implement PDF/Excel export
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Orchestration** | LangGraph | Native support for cyclic workflows; cleaner than raw LangChain for multi-agent patterns |
+| **LLM Provider** | Groq (Llama 3.1 8B) | Sub-second inference enables tight feedback loops; cost-effective for demos |
+| **Quality Threshold** | 7/10 | Balances quality vs. latency; lower values cause excessive loops, higher values rarely achievable |
+| **Max Revisions** | 3 | Empirically, quality plateaus after 2-3 iterations; prevents infinite loops |
+| **Same Model for Critic** | Intentional tradeoff | Production would use a stronger model for evaluation; kept simple for demo cost management |
+| **Web Search** | Tavily API | Purpose-built for LLM applications; returns clean, structured content |
 
-### Long-Term
-- Multi-company comparison
-- Time-series analysis
+### Known Limitations
+
+- **Self-evaluation bias**: The critic uses the same model family as the analyst. A production system would use a more capable evaluator model or human-in-the-loop for high-stakes decisions.
+- **Mock data visibility**: When Tavily API is unavailable, the UI clearly indicates cached data is being used.
+
+## Roadmap
+
+- Add financial ratio integration for quantitative analysis
+- Multi-company comparison view
+- PDF/Excel export
 - Custom strategy definitions
-- Team collaboration features
-- Enterprise deployment options
+- Time-series analysis for trend tracking
 
-## ✨ Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -190,7 +321,7 @@ Contributions are welcome! Please follow these steps:
 4. Add tests for new functionality
 5. Submit a pull request
 
-## ✨ License
+## License
 
 This project is licensed under the MIT License.
 
