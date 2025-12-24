@@ -1,3 +1,39 @@
+# A2A Strategy Agent
+
+An **AI-powered strategic analysis system** that generates SWOT analyses for companies using a self-correcting workflow.
+
+## Workflow Pipeline
+
+```
+Researcher → Analyst → Critic → Editor (loop)
+```
+
+### 4 Node Types
+
+1. **Researcher** - Gathers real-time data via Tavily API, summarizes with LLM
+2. **Analyst** - Generates SWOT analysis focused on Cost Leadership strategy
+3. **Critic** - Evaluates quality (1-10 score) using a rubric
+4. **Editor** - Revises based on critique if score < 7 (max 3 iterations)
+
+## Key Technical Components
+
+- **LangGraph** for workflow orchestration (linear & cyclic graphs)
+- **Tavily API** for real-time web search
+- **Groq LLM** (llama-3.1-8b-instant) for analysis
+- **SQLite** database storing strategy context (Cost Leadership)
+- **MCP Server** exposing database as a tool
+- **LangSmith** for tracing/observability
+- **Streamlit** frontend for user interface
+- **FastAPI** backend (`api/`) for async workflow execution
+
+## Quality Control System
+
+- Rubric-based evaluation: Completeness, Specificity, Relevance, Depth (25% each)
+- Self-correcting loop exits when score ≥ 7 or after 3 revisions
+- Real-time progress tracking via polling (700ms intervals)
+
+---
+
 # Data Sources for SWOT Analysis
 
 ## Why MCP Servers?
@@ -99,14 +135,15 @@ Real-time news and web content. Requires Tavily API key.
 | 35 | Industry Trends | Sector outlook and forecasts | Tavily API | - |
 | 36 | Competitor News | Peer company coverage | Tavily API | - |
 
-### Sentiment Basket [TODO]
+### Sentiment Basket
 
-Market sentiment indicators. Limited free sources available.
+Market sentiment indicators from multiple free sources.
 
 | # | Metric | Purpose | Primary Source | Secondary Source |
 |---|--------|---------|----------------|------------------|
-| 37 | Social Media Sentiment | Public opinion trends | TBD | - |
-| 38 | Analyst Ratings | Professional consensus | TBD | - |
+| 37 | News Sentiment | Bullish/bearish news score | Finnhub | - |
+| 38 | Retail Sentiment | WallStreetBets/stocks buzz | Reddit (VADER) | - |
+| 39 | Consumer Sentiment | Product/brand perception | YouTube (VADER) | - |
 
 ---
 
@@ -119,20 +156,22 @@ Market sentiment indicators. Limited free sources available.
 | 3 | Macro | ✓ Done | 24-27 |
 | 4 | Valuation | ✓ Done | 28-32 |
 | 5 | News | ✓ Done | 33-36 |
-| 6 | Sentiment | TODO | 37-38 |
+| 6 | Sentiment | ✓ Done | 37-39 |
 
 ---
 
 ## API Keys Required
 
-| MCP Server | API Key | Cost |
-|------------|---------|------|
-| Financials Basket | None | Free |
-| Volatility Basket | FRED | Free |
-| Macro Basket | FRED | Free |
-| Valuation Basket | None | Free |
-| News Basket | Tavily | Free (1,000/month) |
-| Sentiment Basket | TBD | TBD |
+| MCP Server        | API Key | Cost                    | Registration                                      |
+| ----------------- | ------- | ----------------------- | ------------------------------------------------- |
+| Financials Basket | None    | Free                    | -                                                 |
+| Volatility Basket | FRED    | Free                    | https://fred.stlouisfed.org/docs/api/api_key.html |
+| Macro Basket      | FRED    | Free                    | https://fred.stlouisfed.org/docs/api/api_key.html |
+| Valuation Basket  | None    | Free                    | -                                                 |
+| News Basket       | Tavily  | Free (1,000/month)      | https://tavily.com                                |
+| Sentiment Basket  | Finnhub | Free (60 calls/min)     | https://finnhub.io/register                       |
+| Sentiment Basket  | None    | Free (100 req/min)      | -                                                 |
+| Sentiment Basket  | YouTube | Free (10,000 units/day) | https://console.cloud.google.com/                 |
 
 ---
 
