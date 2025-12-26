@@ -20,7 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy frontend and build
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-RUN npm ci && npm run build
+# Skip Playwright browser downloads, only install production deps for build
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+RUN npm ci --ignore-scripts && npm run build
 
 # Back to app root
 WORKDIR /app
