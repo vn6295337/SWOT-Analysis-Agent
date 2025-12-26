@@ -8,9 +8,6 @@ import {
   Edit3,
   FileOutput,
   Server,
-  ArrowRight,
-  ArrowDown,
-  CheckCircle,
   Loader2,
   XCircle,
   MinusCircle,
@@ -65,10 +62,6 @@ const connectorColor = (status: NodeStatus) =>
   status === 'executing' ? 'bg-emerald-400' :
   'bg-gray-600'
 
-const arrowColor = (status: NodeStatus) =>
-  status === 'completed' ? 'text-emerald-500' :
-  status === 'executing' ? 'text-emerald-400' :
-  'text-gray-600'
 
 // === COMPONENTS ===
 
@@ -85,13 +78,11 @@ function ProcessNode({
   isDiamond?: boolean
   size?: 'normal' | 'small'
 }) {
-  const StatusIcon = status === 'completed' ? CheckCircle :
-                     status === 'executing' ? Loader2 :
-                     status === 'failed' ? XCircle :
-                     status === 'skipped' ? MinusCircle : null
-
   const nodeSize = size === 'small' ? 'w-9 h-9' : 'w-11 h-11'
   const iconSize = size === 'small' ? 'w-4 h-4' : 'w-5 h-5'
+
+  // Show spinner only when executing, otherwise show original icon
+  const showSpinner = status === 'executing'
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -105,10 +96,8 @@ function ProcessNode({
         )}
       >
         <div className={cn(isDiamond && '-rotate-45')}>
-          {StatusIcon && status === 'executing' ? (
+          {showSpinner ? (
             <Loader2 className={cn(iconSize, 'text-white animate-spin')} />
-          ) : StatusIcon ? (
-            <StatusIcon className={cn(iconSize, 'text-white')} />
           ) : (
             <Icon className={cn(iconSize, 'text-white')} />
           )}
@@ -124,26 +113,18 @@ function ProcessNode({
   )
 }
 
-function HArrow({ status }: { status: NodeStatus }) {
+function HDash({ status }: { status: NodeStatus }) {
   return (
-    <div className="flex items-center justify-center w-6">
-      <div className={cn('w-3 h-0.5', connectorColor(status))} />
-      <ArrowRight className={cn('w-3 h-3 -ml-0.5', arrowColor(status))} />
+    <div className="flex items-center justify-center w-6 h-11">
+      <div className={cn('w-full h-0.5', connectorColor(status))} />
     </div>
   )
 }
 
-function VLine({ status, className }: { status: NodeStatus; className?: string }) {
+function VDash({ status }: { status: NodeStatus }) {
   return (
-    <div className={cn('w-0.5 bg-gray-600', connectorColor(status), className)} />
-  )
-}
-
-function VArrow({ status }: { status: NodeStatus }) {
-  return (
-    <div className="flex flex-col items-center">
-      <VLine status={status} className="h-4" />
-      <ArrowDown className={cn('w-3 h-3 -mt-0.5', arrowColor(status))} />
+    <div className="flex justify-center w-11 h-4">
+      <div className={cn('w-0.5 h-full', connectorColor(status))} />
     </div>
   )
 }
@@ -169,22 +150,6 @@ function MCPServer({ id, label, status }: { id: string; label: string; status: N
   )
 }
 
-function LLMBox({ provider, status }: { provider?: string; status: NodeStatus }) {
-  return (
-    <div className={cn(
-      'flex items-center gap-1.5 px-2 py-1 rounded border transition-all duration-300',
-      status === 'executing' ? 'bg-blue-600 border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-pulse' :
-      status === 'completed' ? 'bg-blue-700 border-blue-500' :
-      'bg-gray-800 border-gray-700 opacity-50'
-    )}>
-      <Brain className={cn(
-        'w-3 h-3',
-        status === 'executing' || status === 'completed' ? 'text-blue-300' : 'text-gray-500'
-      )} />
-      <span className="text-[10px] font-medium text-gray-300">{provider || 'LLM'}</span>
-    </div>
-  )
-}
 
 // === MAIN COMPONENT ===
 
@@ -206,114 +171,60 @@ export function ProcessFlow({
   const researcherStatus = getNodeStatus('researcher', currentStep, completedSteps, cacheHit)
   const exchangeStatus = getNodeStatus('exchange_match', currentStep, completedSteps, cacheHit)
 
-  const llmActive = ['analyzer', 'critic', 'editor'].find(s =>
-    currentStep === s || (completedSteps.includes(s) && !completedSteps.includes('output'))
-  )
-  const llmStatus: NodeStatus = llmActive === currentStep ? 'executing' : llmActive ? 'completed' : 'idle'
-
   const conn = (from: NodeStatus, to: NodeStatus): NodeStatus =>
     from === 'completed' && to !== 'idle' ? 'completed' :
     from === 'executing' ? 'executing' : 'idle'
 
   return (
     <div className="w-full p-4 overflow-x-auto">
-      {/*
-        Grid layout:
-        Row 1: Input | Cache | A2A | [Analyzer-Critic-Editor] | Output
-        Row 2: Exchange |  -  | Researcher + MCP Servers |  -  |  -
-        Row 3:    -    |  -  |      -      | LLM |  -
-      */}
-      <div className="grid grid-cols-[auto_auto_auto_1fr_auto] grid-rows-[auto_auto_auto] gap-x-2 gap-y-3 justify-items-center items-start min-w-[700px]">
-
-        {/* === ROW 1 === */}
-
-        {/* R1C1: User Input */}
-        <div className="flex items-center">
+      <div className="min-w-[800px]">
+        {/* Row 1: Main flow - evenly spaced */}
+        <div className="flex items-center justify-between">
           <ProcessNode icon={User} label="User Input" status={inputStatus} />
-          <HArrow status={conn(inputStatus, cacheStatus)} />
-        </div>
-
-        {/* R1C2: Cache */}
-        <div className="flex items-center">
+          <HDash status={conn(inputStatus, cacheStatus)} />
           <ProcessNode icon={Database} label="Cache" status={cacheStatus} isDiamond />
-          <HArrow status={conn(cacheStatus, a2aStatus)} />
-        </div>
-
-        {/* R1C3: A2A Client */}
-        <div className="flex items-center">
+          <HDash status={conn(cacheStatus, a2aStatus)} />
           <ProcessNode icon={Network} label="A2A Client" status={a2aStatus} />
-          <HArrow status={conn(a2aStatus, analyzerStatus)} />
+          <HDash status={conn(a2aStatus, analyzerStatus)} />
+          <ProcessNode icon={Brain} label="Analyzer" status={analyzerStatus} />
+          <HDash status={conn(analyzerStatus, criticStatus)} />
+          <ProcessNode icon={MessageSquare} label="Critic" status={criticStatus} />
+          <HDash status={conn(criticStatus, editorStatus)} />
+          <ProcessNode icon={Edit3} label="Editor" status={editorStatus} />
+          <HDash status={conn(editorStatus, outputStatus)} />
+          <ProcessNode icon={FileOutput} label="Output" status={outputStatus} />
         </div>
 
-        {/* R1C4: Analyzer → Critic → Editor (grouped) */}
-        <div className="flex items-center">
-          <div className="border border-dashed border-gray-600 rounded-lg px-3 py-2">
-            <div className="text-[9px] text-gray-500 text-center mb-1">LLM Agents</div>
-            <div className="flex items-center gap-1">
-              <ProcessNode icon={Brain} label="Analyzer" status={analyzerStatus} size="small" />
-              <HArrow status={conn(analyzerStatus, criticStatus)} />
-              <ProcessNode icon={MessageSquare} label="Critic" status={criticStatus} size="small" />
-              <HArrow status={conn(criticStatus, editorStatus)} />
-              <ProcessNode icon={Edit3} label="Editor" status={editorStatus} size="small" />
-            </div>
+        {/* Row 2: Exchange (under User Input) and Researcher (under A2A) */}
+        <div className="flex mt-1">
+          {/* Exchange - aligned under User Input */}
+          <div className="flex flex-col items-center" style={{ width: '44px' }}>
+            <VDash status={conn(inputStatus, exchangeStatus)} />
+            <ProcessNode icon={GitBranch} label="Exchange" status={exchangeStatus} />
           </div>
-          <HArrow status={conn(editorStatus, outputStatus)} />
-        </div>
 
-        {/* R1C5: Output */}
-        <ProcessNode icon={FileOutput} label="Output" status={outputStatus} />
+          {/* Spacer to align Researcher under A2A (skip Cache) */}
+          <div className="flex-1" style={{ maxWidth: '140px' }} />
 
-        {/* === ROW 2 === */}
-
-        {/* R2C1: Vertical connector + Exchange Match */}
-        <div className="flex flex-col items-center">
-          <VArrow status={conn(inputStatus, exchangeStatus)} />
-          <ProcessNode icon={GitBranch} label="Exchange" status={exchangeStatus} />
-        </div>
-
-        {/* R2C2: Empty */}
-        <div />
-
-        {/* R2C3: Vertical connector + Researcher + MCP Servers */}
-        <div className="flex flex-col items-center col-span-1">
-          <VArrow status={conn(a2aStatus, researcherStatus)} />
-          <div className="flex items-center gap-2">
-            <ProcessNode icon={Search} label="Researcher" status={researcherStatus} />
-            <div className={cn('w-3 h-0.5', connectorColor(researcherStatus))} />
-            <div className="flex gap-1 p-1.5 bg-gray-800/50 border border-gray-700 rounded-lg">
-              {mcpServers.map((s) => (
-                <MCPServer
-                  key={s.id}
-                  id={s.id}
-                  label={s.label}
-                  status={mcpStatus[s.id as keyof MCPStatus] || 'idle'}
-                />
-              ))}
+          {/* Researcher + MCP - aligned under A2A */}
+          <div className="flex flex-col items-center">
+            <VDash status={conn(a2aStatus, researcherStatus)} />
+            <div className="flex items-center gap-2">
+              <ProcessNode icon={Search} label="Researcher" status={researcherStatus} />
+              <div className={cn('w-3 h-0.5', connectorColor(researcherStatus))} />
+              <div className="flex gap-1 p-1.5 bg-gray-800/50 border border-gray-700 rounded-lg">
+                {mcpServers.map((s) => (
+                  <MCPServer
+                    key={s.id}
+                    id={s.id}
+                    label={s.label}
+                    status={mcpStatus[s.id as keyof MCPStatus] || 'idle'}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* R2C4: Empty */}
-        <div />
-
-        {/* R2C5: Empty */}
-        <div />
-
-        {/* === ROW 3 === */}
-
-        {/* R3C1-3: Empty */}
-        <div />
-        <div />
-        <div />
-
-        {/* R3C4: LLM (centered under agents) */}
-        <div className="flex flex-col items-center">
-          <VLine status={llmStatus} className="h-3" />
-          <LLMBox provider={llmProvider} status={llmStatus} />
-        </div>
-
-        {/* R3C5: Empty */}
-        <div />
       </div>
     </div>
   )
