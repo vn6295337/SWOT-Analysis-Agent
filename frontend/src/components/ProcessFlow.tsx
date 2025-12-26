@@ -40,10 +40,12 @@ const GAP = 72
 const CONNECTOR_PAD = 2  // fix #2: single source of truth
 const GROUP_PAD = 8      // fix #7: consistent group box padding
 
-// Row Y positions (pulled up for tighter header gap)
-const ROW1_Y = 52
-const ROW2_Y = 148
-const ROW3_Y = 210
+// Row Y positions (uniform 70px gaps)
+const ROW_GAP = 70
+const ROW1_Y = 38
+const ROW2_Y = ROW1_Y + ROW_GAP   // 108
+const ROW3_Y = ROW2_Y + ROW_GAP   // 178
+const BYPASS_Y = 8                 // above agents group box
 
 // Centering: flow occupies 75% evenly
 const SVG_WIDTH = 560
@@ -432,10 +434,10 @@ export function ProcessFlow({
     <div className="flex">
       <div className="w-[75%] p-4 overflow-x-auto">
         <svg
-          viewBox="0 0 560 300"
+          viewBox="0 0 560 240"
           preserveAspectRatio="xMidYMid meet"
           className="w-full"
-          style={{ minHeight: '300px' }}
+          style={{ minHeight: '240px' }}
         >
           <ArrowMarkers />
 
@@ -444,8 +446,8 @@ export function ProcessFlow({
           {/* Fix #9: Cache bypass - demoted (strokeWidth=1, opacity=0.25, dashed) */}
           <ArrowPath
             d={`M ${NODES.cache.x} ${nodeTop(NODES.cache)}
-                L ${NODES.cache.x} 25
-                L ${NODES.output.x} 25
+                L ${NODES.cache.x} ${BYPASS_Y}
+                L ${NODES.output.x} ${BYPASS_Y}
                 L ${NODES.output.x} ${nodeTop(NODES.output)}`}
             status={bypassStatus}
             strokeWidth={1}
