@@ -30,12 +30,12 @@ interface ProcessFlowProps {
 }
 
 const mcpServers = [
-  { id: 'financials', label: 'Financials' },
-  { id: 'valuation', label: 'Valuation' },
-  { id: 'volatility', label: 'Volatility' },
-  { id: 'macro', label: 'Macro' },
+  { id: 'financials', label: 'Fin' },
+  { id: 'valuation', label: 'Val' },
+  { id: 'volatility', label: 'Vol' },
+  { id: 'macro', label: 'Mac' },
   { id: 'news', label: 'News' },
-  { id: 'sentiment', label: 'Sentiment' },
+  { id: 'sentiment', label: 'Sent' },
 ]
 
 function getNodeStatus(
@@ -46,22 +46,31 @@ function getNodeStatus(
 ): NodeStatus {
   if (completedSteps.includes(stepId)) return 'completed'
   if (currentStep === stepId) return 'executing'
-
-  // If cache hit, skip researcher through editor
   if (cacheHit && ['researcher', 'analyzer', 'critic', 'editor'].includes(stepId)) {
     return 'skipped'
   }
-
   return 'idle'
 }
 
 const statusStyles = {
-  idle: 'bg-gray-700 border-gray-600 opacity-60',
-  executing: 'bg-emerald-600 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse',
-  completed: 'bg-emerald-700 border-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.3)]',
-  failed: 'bg-red-600 border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)]',
+  idle: 'bg-gray-700 border-gray-600',
+  executing: 'bg-emerald-600 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse',
+  completed: 'bg-emerald-700 border-emerald-500',
+  failed: 'bg-red-600 border-red-400',
   skipped: 'bg-gray-700 border-gray-600 opacity-40 border-dashed',
 }
+
+const connectorColor = (status: NodeStatus) =>
+  status === 'completed' ? 'bg-emerald-500' :
+  status === 'executing' ? 'bg-emerald-400' :
+  'bg-gray-600'
+
+const arrowColor = (status: NodeStatus) =>
+  status === 'completed' ? 'text-emerald-500' :
+  status === 'executing' ? 'text-emerald-400' :
+  'text-gray-600'
+
+// === COMPONENTS ===
 
 function ProcessNode({
   icon: Icon,
@@ -81,17 +90,18 @@ function ProcessNode({
                      status === 'failed' ? XCircle :
                      status === 'skipped' ? MinusCircle : null
 
-  const nodeSize = size === 'small' ? 'w-10 h-10' : 'w-12 h-12'
+  const nodeSize = size === 'small' ? 'w-9 h-9' : 'w-11 h-11'
   const iconSize = size === 'small' ? 'w-4 h-4' : 'w-5 h-5'
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div
         className={cn(
-          'relative flex items-center justify-center border-2 transition-all duration-300',
+          'flex items-center justify-center border-2 transition-all duration-300',
           nodeSize,
           isDiamond ? 'rotate-45 rounded-md' : 'rounded-lg',
-          statusStyles[status]
+          statusStyles[status],
+          status === 'idle' && 'opacity-50'
         )}
       >
         <div className={cn(isDiamond && '-rotate-45')}>
@@ -105,172 +115,78 @@ function ProcessNode({
         </div>
       </div>
       <span className={cn(
-        'text-xs font-medium transition-opacity duration-300 text-center',
+        'text-[10px] font-medium text-center leading-tight',
         status === 'idle' || status === 'skipped' ? 'text-gray-500' : 'text-gray-300'
       )}>
         {label}
       </span>
-      {status === 'skipped' && (
-        <span className="text-[10px] text-gray-600">skipped</span>
-      )}
     </div>
   )
 }
 
-function HorizontalConnector({ status }: { status: NodeStatus }) {
+function HArrow({ status }: { status: NodeStatus }) {
   return (
-    <div className="flex items-center px-1 h-12">
-      <div
-        className={cn(
-          'w-6 h-0.5 transition-all duration-300',
-          status === 'completed' ? 'bg-emerald-500' :
-          status === 'executing' ? 'bg-emerald-400 animate-pulse' :
-          status === 'failed' ? 'bg-red-500' :
-          'bg-gray-600'
-        )}
-      />
-      <ArrowRight
-        className={cn(
-          'w-3 h-3 -ml-1 transition-all duration-300',
-          status === 'completed' ? 'text-emerald-500' :
-          status === 'executing' ? 'text-emerald-400' :
-          status === 'failed' ? 'text-red-500' :
-          'text-gray-600'
-        )}
-      />
+    <div className="flex items-center justify-center w-6">
+      <div className={cn('w-3 h-0.5', connectorColor(status))} />
+      <ArrowRight className={cn('w-3 h-3 -ml-0.5', arrowColor(status))} />
     </div>
   )
 }
 
-function VerticalConnector({ status }: { status: NodeStatus }) {
+function VLine({ status, className }: { status: NodeStatus; className?: string }) {
   return (
-    <div className="flex flex-col items-center py-1">
-      <div
-        className={cn(
-          'w-0.5 h-6 transition-all duration-300',
-          status === 'completed' ? 'bg-emerald-500' :
-          status === 'executing' ? 'bg-emerald-400 animate-pulse' :
-          status === 'failed' ? 'bg-red-500' :
-          'bg-gray-600'
-        )}
-      />
-      <ArrowDown
-        className={cn(
-          'w-3 h-3 -mt-1 transition-all duration-300',
-          status === 'completed' ? 'text-emerald-500' :
-          status === 'executing' ? 'text-emerald-400' :
-          status === 'failed' ? 'text-red-500' :
-          'text-gray-600'
-        )}
-      />
-    </div>
+    <div className={cn('w-0.5 bg-gray-600', connectorColor(status), className)} />
   )
 }
 
-function CornerConnector({ status, direction = 'down-right' }: { status: NodeStatus; direction?: 'down-right' | 'down-left' }) {
-  const color = status === 'completed' ? 'border-emerald-500' :
-                status === 'executing' ? 'border-emerald-400' :
-                status === 'failed' ? 'border-red-500' :
-                'border-gray-600'
-
-  return (
-    <div className={cn(
-      'w-8 h-8 border-b-2 border-l-2 rounded-bl-lg',
-      color,
-      status === 'executing' && 'animate-pulse'
-    )} />
-  )
-}
-
-function MCPServerRow({ mcpStatus }: { mcpStatus: MCPStatus }) {
-  return (
-    <div className="flex items-center gap-1 bg-gray-800/60 backdrop-blur border border-gray-700 rounded-lg px-2 py-1.5">
-      {mcpServers.map((server) => {
-        const status = mcpStatus[server.id as keyof MCPStatus] || 'idle'
-        return (
-          <div
-            key={server.id}
-            className={cn(
-              'flex flex-col items-center p-1.5 rounded border transition-all duration-300 min-w-[52px]',
-              status === 'completed' ? 'bg-emerald-900/50 border-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
-              status === 'executing' ? 'bg-emerald-800/50 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse' :
-              status === 'failed' ? 'bg-red-900/50 border-red-600' :
-              'bg-gray-800 border-gray-700 opacity-60'
-            )}
-          >
-            <Server className={cn(
-              'w-3.5 h-3.5 mb-0.5',
-              status === 'completed' ? 'text-emerald-400' :
-              status === 'executing' ? 'text-emerald-300' :
-              status === 'failed' ? 'text-red-400' :
-              'text-gray-500'
-            )} />
-            <span className={cn(
-              'text-[9px] text-center leading-tight',
-              status === 'completed' || status === 'executing' ? 'text-gray-300' : 'text-gray-500'
-            )}>
-              {server.label}
-            </span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function LLMNode({ provider, status }: { provider?: string; status: NodeStatus }) {
-  return (
-    <div className={cn(
-      'flex flex-col items-center',
-      status === 'idle' && 'opacity-60'
-    )}>
-      <div className={cn(
-        'w-0.5 h-4 transition-all duration-300',
-        status === 'completed' ? 'bg-blue-500' :
-        status === 'executing' ? 'bg-blue-400 animate-pulse' :
-        'bg-gray-600'
-      )} />
-      <div className={cn(
-        'px-3 py-1.5 rounded-lg border transition-all duration-300',
-        status === 'executing' ? 'bg-blue-600 border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.6)] animate-pulse' :
-        status === 'completed' ? 'bg-blue-700 border-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.3)]' :
-        'bg-gray-800 border-gray-700'
-      )}>
-        <div className="flex items-center gap-1.5">
-          <Brain className={cn(
-            'w-3.5 h-3.5',
-            status === 'executing' || status === 'completed' ? 'text-blue-300' : 'text-gray-500'
-          )} />
-          <span className="text-xs font-medium text-gray-300">
-            {provider || 'LLM'}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AgentEnclosure({
-  children,
-  llmProvider,
-  llmStatus
-}: {
-  children: React.ReactNode
-  llmProvider?: string
-  llmStatus: NodeStatus
-}) {
+function VArrow({ status }: { status: NodeStatus }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-gray-800/40 border border-gray-700 rounded-xl p-2 backdrop-blur">
-        <div className="text-[10px] text-gray-500 text-center mb-1.5">LLM Agents</div>
-        <div className="flex items-center">
-          {children}
-        </div>
-      </div>
-      <LLMNode provider={llmProvider} status={llmStatus} />
+      <VLine status={status} className="h-4" />
+      <ArrowDown className={cn('w-3 h-3 -mt-0.5', arrowColor(status))} />
     </div>
   )
 }
+
+function MCPServer({ id, label, status }: { id: string; label: string; status: NodeStatus }) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center p-1 rounded border transition-all duration-300 w-10 h-10',
+        status === 'completed' ? 'bg-emerald-900/50 border-emerald-600' :
+        status === 'executing' ? 'bg-emerald-800/50 border-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+        'bg-gray-800 border-gray-700 opacity-50'
+      )}
+    >
+      <Server className={cn(
+        'w-3 h-3',
+        status === 'completed' ? 'text-emerald-400' :
+        status === 'executing' ? 'text-emerald-300' :
+        'text-gray-500'
+      )} />
+      <span className="text-[8px] text-gray-400 mt-0.5">{label}</span>
+    </div>
+  )
+}
+
+function LLMBox({ provider, status }: { provider?: string; status: NodeStatus }) {
+  return (
+    <div className={cn(
+      'flex items-center gap-1.5 px-2 py-1 rounded border transition-all duration-300',
+      status === 'executing' ? 'bg-blue-600 border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-pulse' :
+      status === 'completed' ? 'bg-blue-700 border-blue-500' :
+      'bg-gray-800 border-gray-700 opacity-50'
+    )}>
+      <Brain className={cn(
+        'w-3 h-3',
+        status === 'executing' || status === 'completed' ? 'text-blue-300' : 'text-gray-500'
+      )} />
+      <span className="text-[10px] font-medium text-gray-300">{provider || 'LLM'}</span>
+    </div>
+  )
+}
+
+// === MAIN COMPONENT ===
 
 export function ProcessFlow({
   currentStep,
@@ -279,104 +195,125 @@ export function ProcessFlow({
   llmProvider,
   cacheHit = false,
 }: ProcessFlowProps) {
-  // Get statuses for each step
+  // Statuses
   const inputStatus = getNodeStatus('input', currentStep, completedSteps, cacheHit)
   const cacheStatus = getNodeStatus('cache', currentStep, completedSteps, cacheHit)
-  const a2aClientStatus = getNodeStatus('a2a_client', currentStep, completedSteps, cacheHit)
+  const a2aStatus = getNodeStatus('a2a_client', currentStep, completedSteps, cacheHit)
   const analyzerStatus = getNodeStatus('analyzer', currentStep, completedSteps, cacheHit)
   const criticStatus = getNodeStatus('critic', currentStep, completedSteps, cacheHit)
   const editorStatus = getNodeStatus('editor', currentStep, completedSteps, cacheHit)
   const outputStatus = getNodeStatus('output', currentStep, completedSteps, cacheHit)
   const researcherStatus = getNodeStatus('researcher', currentStep, completedSteps, cacheHit)
-  const exchangeMatchStatus = getNodeStatus('exchange_match', currentStep, completedSteps, cacheHit)
+  const exchangeStatus = getNodeStatus('exchange_match', currentStep, completedSteps, cacheHit)
 
-  // LLM status based on analyzer/critic/editor
-  const llmActiveFor = ['analyzer', 'critic', 'editor'].find(step =>
-    currentStep === step || (completedSteps.includes(step) && !completedSteps.includes('output'))
+  const llmActive = ['analyzer', 'critic', 'editor'].find(s =>
+    currentStep === s || (completedSteps.includes(s) && !completedSteps.includes('output'))
   )
-  const llmStatus = llmActiveFor === currentStep ? 'executing' :
-                    llmActiveFor ? 'completed' : 'idle'
+  const llmStatus: NodeStatus = llmActive === currentStep ? 'executing' : llmActive ? 'completed' : 'idle'
 
-  // Connector statuses
-  const getConnectorStatus = (fromStatus: NodeStatus, toStatus: NodeStatus): NodeStatus => {
-    if (fromStatus === 'completed' && toStatus !== 'idle') return 'completed'
-    if (fromStatus === 'executing') return 'executing'
-    return 'idle'
-  }
+  const conn = (from: NodeStatus, to: NodeStatus): NodeStatus =>
+    from === 'completed' && to !== 'idle' ? 'completed' :
+    from === 'executing' ? 'executing' : 'idle'
 
   return (
     <div className="w-full bg-gray-900/50 border border-gray-800 rounded-xl p-4 overflow-x-auto">
-      <div className="min-w-[900px] space-y-2">
-        {/* Row 1: Main flow */}
-        <div className="flex items-center justify-center">
-          {/* User Input */}
-          <div className="flex flex-col items-center">
-            <ProcessNode icon={User} label="User Input" status={inputStatus} />
-          </div>
+      {/*
+        Grid layout:
+        Row 1: Input | Cache | A2A | [Analyzer-Critic-Editor] | Output
+        Row 2: Exchange |  -  | Researcher + MCP Servers |  -  |  -
+        Row 3:    -    |  -  |      -      | LLM |  -
+      */}
+      <div className="grid grid-cols-[auto_auto_auto_1fr_auto] grid-rows-[auto_auto_auto] gap-x-2 gap-y-3 justify-items-center items-start min-w-[700px]">
 
-          <HorizontalConnector status={getConnectorStatus(inputStatus, cacheStatus)} />
+        {/* === ROW 1 === */}
 
-          {/* Check Cache */}
-          <ProcessNode icon={Database} label="Check Cache" status={cacheStatus} isDiamond />
-
-          <HorizontalConnector status={getConnectorStatus(cacheStatus, a2aClientStatus)} />
-
-          {/* A2A Client */}
-          <div className="flex flex-col items-center">
-            <ProcessNode icon={Network} label="A2A Client" status={a2aClientStatus} />
-          </div>
-
-          <HorizontalConnector status={getConnectorStatus(a2aClientStatus, analyzerStatus)} />
-
-          {/* Analyzer/Critic/Editor Enclosure */}
-          <AgentEnclosure llmProvider={llmProvider} llmStatus={llmStatus}>
-            <ProcessNode icon={Brain} label="Analyzer" status={analyzerStatus} size="small" />
-            <HorizontalConnector status={getConnectorStatus(analyzerStatus, criticStatus)} />
-            <ProcessNode icon={MessageSquare} label="Critic" status={criticStatus} size="small" />
-            <HorizontalConnector status={getConnectorStatus(criticStatus, editorStatus)} />
-            <ProcessNode icon={Edit3} label="Editor" status={editorStatus} size="small" />
-          </AgentEnclosure>
-
-          <HorizontalConnector status={getConnectorStatus(editorStatus, outputStatus)} />
-
-          {/* Output */}
-          <ProcessNode icon={FileOutput} label="Output" status={outputStatus} />
+        {/* R1C1: User Input */}
+        <div className="flex items-center">
+          <ProcessNode icon={User} label="User Input" status={inputStatus} />
+          <HArrow status={conn(inputStatus, cacheStatus)} />
         </div>
 
-        {/* Vertical connectors to Row 2 */}
-        <div className="flex justify-start pl-[52px] gap-[280px]">
-          {/* Vertical from User Input to Exchange Match */}
-          <div className="flex flex-col items-center">
-            <VerticalConnector status={getConnectorStatus(inputStatus, exchangeMatchStatus)} />
-          </div>
+        {/* R1C2: Cache */}
+        <div className="flex items-center">
+          <ProcessNode icon={Database} label="Cache" status={cacheStatus} isDiamond />
+          <HArrow status={conn(cacheStatus, a2aStatus)} />
+        </div>
 
-          {/* Corner from A2A Client down to Researcher */}
-          <div className="flex items-start">
-            <div className="flex flex-col items-center">
-              <VerticalConnector status={getConnectorStatus(a2aClientStatus, researcherStatus)} />
+        {/* R1C3: A2A Client */}
+        <div className="flex items-center">
+          <ProcessNode icon={Network} label="A2A Client" status={a2aStatus} />
+          <HArrow status={conn(a2aStatus, analyzerStatus)} />
+        </div>
+
+        {/* R1C4: Analyzer → Critic → Editor (grouped) */}
+        <div className="flex items-center">
+          <div className="border border-dashed border-gray-600 rounded-lg px-3 py-2">
+            <div className="text-[9px] text-gray-500 text-center mb-1">LLM Agents</div>
+            <div className="flex items-center gap-1">
+              <ProcessNode icon={Brain} label="Analyzer" status={analyzerStatus} size="small" />
+              <HArrow status={conn(analyzerStatus, criticStatus)} />
+              <ProcessNode icon={MessageSquare} label="Critic" status={criticStatus} size="small" />
+              <HArrow status={conn(criticStatus, editorStatus)} />
+              <ProcessNode icon={Edit3} label="Editor" status={editorStatus} size="small" />
             </div>
           </div>
+          <HArrow status={conn(editorStatus, outputStatus)} />
         </div>
 
-        {/* Row 2: Exchange Match + Researcher + MCP Servers */}
-        <div className="flex items-start justify-start pl-[26px] gap-[200px]">
-          {/* Exchange Matching */}
-          <ProcessNode icon={GitBranch} label="Exchange Match" status={exchangeMatchStatus} />
+        {/* R1C5: Output */}
+        <ProcessNode icon={FileOutput} label="Output" status={outputStatus} />
 
-          {/* Researcher + MCP Servers */}
-          <div className="flex items-center gap-3">
+        {/* === ROW 2 === */}
+
+        {/* R2C1: Vertical connector + Exchange Match */}
+        <div className="flex flex-col items-center">
+          <VArrow status={conn(inputStatus, exchangeStatus)} />
+          <ProcessNode icon={GitBranch} label="Exchange" status={exchangeStatus} />
+        </div>
+
+        {/* R2C2: Empty */}
+        <div />
+
+        {/* R2C3: Vertical connector + Researcher + MCP Servers */}
+        <div className="flex flex-col items-center col-span-1">
+          <VArrow status={conn(a2aStatus, researcherStatus)} />
+          <div className="flex items-center gap-2">
             <ProcessNode icon={Search} label="Researcher" status={researcherStatus} />
-            <div className="flex items-center h-12">
-              <div className={cn(
-                'w-4 h-0.5',
-                researcherStatus === 'completed' ? 'bg-emerald-500' :
-                researcherStatus === 'executing' ? 'bg-emerald-400 animate-pulse' :
-                'bg-gray-600'
-              )} />
+            <div className={cn('w-3 h-0.5', connectorColor(researcherStatus))} />
+            <div className="flex gap-1 p-1.5 bg-gray-800/50 border border-gray-700 rounded-lg">
+              {mcpServers.map((s) => (
+                <MCPServer
+                  key={s.id}
+                  id={s.id}
+                  label={s.label}
+                  status={mcpStatus[s.id as keyof MCPStatus] || 'idle'}
+                />
+              ))}
             </div>
-            <MCPServerRow mcpStatus={mcpStatus} />
           </div>
         </div>
+
+        {/* R2C4: Empty */}
+        <div />
+
+        {/* R2C5: Empty */}
+        <div />
+
+        {/* === ROW 3 === */}
+
+        {/* R3C1-3: Empty */}
+        <div />
+        <div />
+        <div />
+
+        {/* R3C4: LLM (centered under agents) */}
+        <div className="flex flex-col items-center">
+          <VLine status={llmStatus} className="h-3" />
+          <LLMBox provider={llmProvider} status={llmStatus} />
+        </div>
+
+        {/* R3C5: Empty */}
+        <div />
       </div>
     </div>
   )
