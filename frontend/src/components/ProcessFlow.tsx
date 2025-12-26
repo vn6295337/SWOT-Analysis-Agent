@@ -24,6 +24,7 @@ interface ProcessFlowProps {
   llmProvider?: string
   cacheHit?: boolean
   stockSelected?: boolean
+  isSearching?: boolean
 }
 
 // === CONSTANTS ===
@@ -410,16 +411,26 @@ export function ProcessFlow({
   llmProvider = 'groq',
   cacheHit = false,
   stockSelected = false,
+  isSearching = false,
 }: ProcessFlowProps) {
-  const inputStatus = getNodeStatus('input', currentStep, completedSteps, cacheHit)
+  // Input & Exchange status based on search/selection state
+  const inputStatus: NodeStatus = stockSelected
+    ? 'completed'
+    : getNodeStatus('input', currentStep, completedSteps, cacheHit)
+
+  // Exchange: blinks while searching, solid green when selected
+  const exchangeStatus: NodeStatus = stockSelected
+    ? 'completed'
+    : isSearching
+      ? 'executing'
+      : 'idle'
+
   const a2aStatus = getNodeStatus('a2a_client', currentStep, completedSteps, cacheHit)
   const analyzerStatus = getNodeStatus('analyzer', currentStep, completedSteps, cacheHit)
   const criticStatus = getNodeStatus('critic', currentStep, completedSteps, cacheHit)
   const editorStatus = getNodeStatus('editor', currentStep, completedSteps, cacheHit)
   const outputStatus = getNodeStatus('output', currentStep, completedSteps, cacheHit)
   const researcherStatus = getNodeStatus('researcher', currentStep, completedSteps, cacheHit)
-  // Exchange is completed when stock is selected
-  const exchangeStatus: NodeStatus = stockSelected ? 'completed' : 'idle'
 
   const cacheState: CacheState =
     currentStep === 'cache' ? 'checking' :

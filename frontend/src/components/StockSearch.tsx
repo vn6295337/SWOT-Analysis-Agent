@@ -9,6 +9,7 @@ interface StockSearchProps {
   disabled?: boolean
   selectedStock?: StockResult | null
   onClear?: () => void
+  onSearchChange?: (isSearching: boolean) => void
 }
 
 export function StockSearch({
@@ -16,6 +17,7 @@ export function StockSearch({
   disabled = false,
   selectedStock,
   onClear,
+  onSearchChange,
 }: StockSearchProps) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<StockResult[]>([])
@@ -71,6 +73,11 @@ export function StockSearch({
       }
     }
   }, [query, performSearch])
+
+  // Notify parent when search state changes
+  useEffect(() => {
+    onSearchChange?.(query.length > 0)
+  }, [query, onSearchChange])
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
