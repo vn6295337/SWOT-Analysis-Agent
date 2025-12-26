@@ -234,6 +234,44 @@ def _render_research_sidebar(metrics: dict):
             st.sidebar.markdown(f"Reddit: **{format_number(r_score, 0)}/100** ({r_posts} posts)")
 
 
+def _calculate_confidence(score: float, sources_available: list, sources_failed: list) -> dict:
+    """
+    Calculate strategic confidence based on score and data coverage.
+    Returns confidence level, label, and readiness status.
+    """
+    # Base confidence from score (0-10 -> 0-60%)
+    score_confidence = (score / 10) * 60 if isinstance(score, (int, float)) else 30
+
+    # Data coverage bonus (0-40%)
+    total_sources = len(sources_available) + len(sources_failed)
+    if total_sources > 0:
+        coverage = len(sources_available) / total_sources
+        data_confidence = coverage * 40
+    else:
+        data_confidence = 20
+
+    total_confidence = score_confidence + data_confidence
+
+    # Determine readiness label
+    if total_confidence >= 75 and len(sources_failed) == 0:
+        readiness = "Board-ready"
+        level = "high"
+    elif total_confidence >= 60:
+        readiness = "Review recommended"
+        level = "medium"
+    else:
+        readiness = "Exploratory"
+        level = "low"
+
+    return {
+        "confidence": round(total_confidence),
+        "readiness": readiness,
+        "level": level,
+        "score_contribution": round(score_confidence),
+        "data_contribution": round(data_confidence)
+    }
+
+
 def _render_api_status():
     """Render API connection status at bottom of sidebar."""
     st.sidebar.markdown("---")
@@ -269,16 +307,24 @@ has_llm_key = any([
     os.getenv("OPENROUTER_API_KEY")
 ])
 
-st.set_page_config(layout="wide", page_title="A2A Strategy Agent")
-st.title("A2A Strategy Agent")
+st.set_page_config(layout="wide", page_title="AI Strategy Copilot")
+
+# Executive Decision Header
+st.title("AI Strategy Copilot")
+st.caption("Automated market intelligence with self-evaluating agents")
+
+# View Mode Toggle
+view_mode = st.radio(
+    "View Mode",
+    ["Executive Summary", "Full Analysis", "System Internals"],
+    horizontal=True,
+    index=1  # Default to Full Analysis
+)
 
 # Sidebar header - Research Data (populated after analysis)
 st.sidebar.header("Research Data")
 st.sidebar.caption("Run analysis to populate")
 _render_api_status()
-
-# Main content
-st.header("Strategic SWOT Analysis with Self-Correcting AI")
 
 if not has_llm_key:
     st.error("No LLM API key configured. Please set at least one of: GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY")
@@ -341,54 +387,188 @@ if run_button:
     _render_api_status()
 
     # ============================================================
-    # MAIN CONTENT: SWOT Analysis, Quality, Details
+    # STRATEGIC CONFIDENCE SCORE
     # ============================================================
-    tab1, tab2, tab3 = st.tabs(["SWOT Analysis", "Quality Evaluation", "Process Details"])
+    score = result.get("score", 0)
+    revisions = result.get("revision_count", 0)
+    sources_available = raw_data.get("sources_available", [])
+    sources_failed = result.get("sources_failed", [])
 
-    with tab1:
-        st.subheader(f"SWOT Analysis for {company}")
+    confidence = _calculate_confidence(score, sources_available, sources_failed)
+
+    # Confidence header with metrics
+    conf_col1, conf_col2, conf_col3, conf_col4 = st.columns([2, 1, 1, 1])
+    with conf_col1:
+        st.subheader(f"Strategic Analysis: {company}")
+    with conf_col2:
+        confidence_color = {"high": "green", "medium": "orange", "low": "red"}.get(confidence["level"], "gray")
+        st.metric("Confidence", f"{confidence['confidence']}%", delta=confidence["readiness"])
+    with conf_col3:
+        st.metric("Quality Score", f"{score}/10")
+    with conf_col4:
+        st.metric("Self-Corrections", revisions)
+
+    # ============================================================
+    # VIEW MODE CONDITIONAL DISPLAY
+    # ============================================================
+    if view_mode == "Executive Summary":
+        # Executive Summary: One-page SWOT with confidence
+        st.markdown("---")
         st.markdown(result["draft_report"])
 
-    with tab2:
-        st.subheader("Quality Evaluation")
-        score = result.get("score", "N/A")
-        revisions = result.get("revision_count", 0)
-        critique = result.get("critique", "No critique available")
-
-        if isinstance(score, (int, float)):
-            st.progress(score / 10)
-            if score >= 7:
-                st.success(f"**Score:** {score}/10 - High Quality")
-            elif score >= 5:
-                st.warning(f"**Score:** {score}/10 - Acceptable")
-            else:
-                st.error(f"**Score:** {score}/10 - Needs Improvement")
+        # Brief quality note
+        if confidence["level"] == "high":
+            st.success(f"Analysis confidence: {confidence['confidence']}% - {confidence['readiness']}")
+        elif confidence["level"] == "medium":
+            st.warning(f"Analysis confidence: {confidence['confidence']}% - {confidence['readiness']}")
         else:
-            st.info(f"**Score:** {score}")
+            st.info(f"Analysis confidence: {confidence['confidence']}% - {confidence['readiness']}")
 
-        st.metric("Revisions Made", revisions)
-        st.text_area("Critique", critique, height=150)
+    elif view_mode == "Full Analysis":
+        # Full Analysis: All tabs with details
+        tab1, tab2, tab3, tab4 = st.tabs(["SWOT Analysis", "Quality Evaluation", "Agent Workflow", "Process Details"])
 
-    with tab3:
-        st.subheader("Process Details")
-        pcol1, pcol2 = st.columns(2)
-        with pcol1:
-            st.write(f"**Company:** {company}")
-            st.write(f"**Strategy Focus:** {strategy}")
-            st.write(f"**Report Length:** {len(result.get('draft_report', ''))} chars")
-        with pcol2:
-            provider = result.get("provider_used", "Unknown")
-            data_source = result.get("data_source", "unknown")
-            st.write(f"**LLM Provider:** {provider}")
-            data_source_label = {
-                "live": "Live MCP servers",
-                "cached": "Cached (SQLite)",
-                "a2a": "A2A Protocol (decoupled)"
-            }.get(data_source, data_source)
-            st.write(f"**Data Source:** {data_source_label}")
-            st.write(f"**Revisions:** {result.get('revision_count', 0)}")
+        with tab1:
+            st.markdown(result["draft_report"])
+
+        with tab2:
+            st.subheader("Quality Evaluation")
+            critique = result.get("critique", "No critique available")
+
+            if isinstance(score, (int, float)):
+                st.progress(score / 10)
+                if score >= 7:
+                    st.success(f"**Score:** {score}/10 - High Quality")
+                elif score >= 5:
+                    st.warning(f"**Score:** {score}/10 - Acceptable")
+                else:
+                    st.error(f"**Score:** {score}/10 - Needs Improvement")
+            else:
+                st.info(f"**Score:** {score}")
+
+            # Self-Correction Visibility
+            st.markdown("---")
+            st.markdown("**Self-Correction Summary**")
+            if revisions > 0:
+                st.info(f"The AI agents revised this analysis {revisions} time(s) to improve quality.")
+                st.markdown(f"Each revision addressed feedback from the Critic agent to strengthen the analysis.")
+            else:
+                st.success("Analysis met quality standards on first pass - no revisions needed.")
+
+            st.text_area("Detailed Critique", critique, height=150)
+
+        with tab3:
+            st.subheader("Agent Workflow")
+            st.markdown("**Multi-agent orchestration pipeline**")
+
+            # Agent timeline
+            agent_col1, agent_col2, agent_col3, agent_col4 = st.columns(4)
+
+            with agent_col1:
+                st.markdown("**1. Researcher**")
+                st.caption("Data Collection")
+                st.markdown(f"Sources: {len(sources_available)}/{len(sources_available) + len(sources_failed)}")
+                if sources_failed:
+                    st.warning(f"Failed: {', '.join(sources_failed)}")
+                else:
+                    st.success("All sources collected")
+
+            with agent_col2:
+                st.markdown("**2. Analyst**")
+                st.caption("SWOT Synthesis")
+                st.markdown(f"Strategy: {strategy}")
+                st.success("Draft generated")
+
+            with agent_col3:
+                st.markdown("**3. Critic**")
+                st.caption("Quality Evaluation")
+                st.markdown(f"Score: {score}/10")
+                if score >= 7:
+                    st.success("Approved")
+                else:
+                    st.warning("Requested revision")
+
+            with agent_col4:
+                st.markdown("**4. Editor**")
+                st.caption("Refinement")
+                st.markdown(f"Revisions: {revisions}")
+                if revisions > 0:
+                    st.info(f"{revisions} revision(s) made")
+                else:
+                    st.success("No revisions needed")
+
+            # Workflow explanation
+            st.markdown("---")
+            st.markdown("""
+            **How it works:**
+            - **Researcher** aggregates data from 6 MCP servers (financials, valuation, volatility, macro, news, sentiment)
+            - **Analyst** synthesizes data into strategic SWOT framework aligned with chosen strategy
+            - **Critic** evaluates quality using hybrid scoring (40% deterministic checks + 60% LLM evaluation)
+            - **Editor** refines the analysis if score < 7/10 (up to 3 revision cycles)
+            """)
+
+        with tab4:
+            st.subheader("Process Details")
+            pcol1, pcol2 = st.columns(2)
+            with pcol1:
+                st.write(f"**Company:** {company}")
+                st.write(f"**Strategy Focus:** {strategy}")
+                st.write(f"**Report Length:** {len(result.get('draft_report', ''))} chars")
+            with pcol2:
+                provider = result.get("provider_used", "Unknown")
+                data_source = result.get("data_source", "unknown")
+                st.write(f"**LLM Provider:** {provider}")
+                data_source_label = {
+                    "live": "Live MCP servers",
+                    "cached": "Cached (SQLite)",
+                    "a2a": "A2A Protocol (decoupled)"
+                }.get(data_source, data_source)
+                st.write(f"**Data Source:** {data_source_label}")
+                st.write(f"**Revisions:** {revisions}")
+
+            # Confidence breakdown
+            st.markdown("---")
+            st.markdown("**Confidence Score Breakdown**")
+            st.write(f"- Quality contribution: {confidence['score_contribution']}% (from {score}/10 score)")
+            st.write(f"- Data coverage contribution: {confidence['data_contribution']}% (from {len(sources_available)}/{len(sources_available) + len(sources_failed)} sources)")
+            st.write(f"- **Total confidence: {confidence['confidence']}%** ({confidence['readiness']})")
+
+    else:  # System Internals
+        # System Internals: Technical details for developers
+        tab1, tab2, tab3 = st.tabs(["Raw Output", "Agent State", "Debug Info"])
+
+        with tab1:
+            st.subheader("Raw SWOT Output")
+            st.code(result["draft_report"], language="markdown")
+
+        with tab2:
+            st.subheader("Final Agent State")
+            state_display = {
+                "company_name": company,
+                "strategy_focus": strategy,
+                "score": score,
+                "revision_count": revisions,
+                "provider_used": result.get("provider_used"),
+                "data_source": result.get("data_source"),
+                "sources_available": sources_available,
+                "sources_failed": sources_failed
+            }
+            st.json(state_display)
+
+        with tab3:
+            st.subheader("Debug Information")
+            st.markdown("**Critique Details**")
+            critique_details = result.get("critique_details", {})
+            if critique_details:
+                st.json(critique_details)
+            else:
+                st.text_area("Critique", result.get("critique", "No critique available"), height=150)
+
+            st.markdown("**Raw Data (truncated)**")
+            if raw_data:
+                st.json({k: str(v)[:200] + "..." if len(str(v)) > 200 else v for k, v in raw_data.items() if k != "metrics"})
 
 
 # Footer
 st.markdown("---")
-st.caption("A2A Strategy Agent | Agentic AI Demo | [GitHub](https://github.com/vn6295337/A2A-strategy-agent)")
+st.caption("AI Strategy Copilot | Multi-agent SWOT analysis with self-correction | [GitHub](https://github.com/vn6295337/A2A-strategy-agent)")
