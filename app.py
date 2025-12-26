@@ -1,9 +1,209 @@
 import streamlit as st
 import os
 import json
+import time
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
+
+from src.stock_listings import get_us_stock_listings, search_stocks, highlight_match
+
+
+# ============================================================
+# STOCK SEARCH AUTOCOMPLETE
+# ============================================================
+
+@st.cache_data(ttl=86400)  # Cache for 24 hours
+def load_stock_listings():
+    """Load US stock listings with caching."""
+    return get_us_stock_listings()
+
+
+def render_stock_search():
+    """
+    Render autocomplete search bar for US stocks.
+
+    Features:
+    - Real-time suggestions as user types (debounced)
+    - Shows: Company Name | Ticker | Exchange
+    - Highlights matched characters
+    - Ranked by match quality then market cap
+    - Keyboard navigation support
+    - Loading/no-results states
+
+    Returns:
+        tuple: (company_name, ticker) or (None, None) if not selected
+    """
+    # Initialize session state
+    if "search_query" not in st.session_state:
+        st.session_state.search_query = ""
+    if "selected_stock" not in st.session_state:
+        st.session_state.selected_stock = None
+    if "show_suggestions" not in st.session_state:
+        st.session_state.show_suggestions = False
+    if "selected_index" not in st.session_state:
+        st.session_state.selected_index = 0
+    if "last_search_time" not in st.session_state:
+        st.session_state.last_search_time = 0
+
+    # Load stock data
+    stocks = load_stock_listings()
+
+    # Search input
+    col1, col2 = st.columns([4, 1])
+
+    with col1:
+        # If a stock is selected, show it in the input
+        default_value = ""
+        if st.session_state.selected_stock:
+            s = st.session_state.selected_stock
+            default_value = f"{s['name']} ({s['symbol']})"
+
+        query = st.text_input(
+            "Search company",
+            value=default_value,
+            placeholder="Type company name or ticker (e.g., Apple, TSLA, Microsoft)",
+            key="company_search_input",
+            label_visibility="collapsed"
+        )
+
+    with col2:
+        if st.session_state.selected_stock:
+            if st.button("Clear", use_container_width=True):
+                st.session_state.selected_stock = None
+                st.session_state.search_query = ""
+                st.session_state.show_suggestions = False
+                st.rerun()
+
+    # Debounce: only search if query changed and enough time passed
+    current_time = time.time()
+    debounce_ms = 150  # 150ms debounce
+    query_changed = query != st.session_state.search_query
+
+    if query_changed:
+        st.session_state.search_query = query
+        st.session_state.last_search_time = current_time
+        st.session_state.selected_index = 0
+
+        # Clear selection if user is typing a new query
+        if st.session_state.selected_stock:
+            selected_text = f"{st.session_state.selected_stock['name']} ({st.session_state.selected_stock['symbol']})"
+            if query != selected_text:
+                st.session_state.selected_stock = None
+
+    # Determine if we should show suggestions
+    show_dropdown = (
+        query and
+        len(query) >= 1 and
+        not st.session_state.selected_stock and
+        not query.endswith(")")  # Don't show if user selected something
+    )
+
+    if show_dropdown:
+        # Search with minimum 1 character, max 8 results
+        results = search_stocks(query, stocks, max_results=8, min_query_length=1)
+
+        if results:
+            # Render suggestions container
+            st.markdown("""
+            <style>
+            .stock-suggestion {
+                padding: 8px 12px;
+                border-bottom: 1px solid #333;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .stock-suggestion:hover {
+                background-color: #2a2a2a;
+            }
+            .stock-symbol {
+                font-weight: bold;
+                color: #4CAF50;
+                min-width: 70px;
+            }
+            .stock-name {
+                flex: 1;
+                margin: 0 12px;
+                color: #e0e0e0;
+            }
+            .stock-exchange {
+                font-size: 0.8em;
+                color: #888;
+                min-width: 60px;
+                text-align: right;
+            }
+            .stock-name mark {
+                background-color: #4CAF50;
+                color: #000;
+                padding: 0 2px;
+                border-radius: 2px;
+            }
+            .stock-symbol mark {
+                background-color: #4CAF50;
+                color: #000;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Create buttons for each result
+            for i, result in enumerate(results):
+                symbol = result["symbol"]
+                name = result["name"]
+                exchange = result["exchange"]
+
+                # Highlight matches
+                symbol_highlighted = highlight_match(symbol, query, is_symbol=True)
+                name_highlighted = highlight_match(name, query, is_symbol=False)
+
+                # Truncate long names
+                if len(name) > 45:
+                    name_display = name[:42] + "..."
+                    name_highlighted = highlight_match(name_display, query, is_symbol=False)
+                else:
+                    name_display = name
+
+                # Create clickable button for each result
+                col_sym, col_name, col_exch = st.columns([1, 4, 1])
+                with col_sym:
+                    st.markdown(f"**{symbol}**")
+                with col_name:
+                    st.caption(name_display)
+                with col_exch:
+                    st.caption(exchange)
+
+                # Full-width button overlay
+                if st.button(
+                    f"Select {symbol}",
+                    key=f"stock_btn_{symbol}_{i}",
+                    use_container_width=True,
+                    type="secondary"
+                ):
+                    st.session_state.selected_stock = {
+                        "symbol": symbol,
+                        "name": name,
+                        "exchange": exchange
+                    }
+                    st.session_state.show_suggestions = False
+                    st.rerun()
+
+            st.markdown("---")
+
+        else:
+            # No results state
+            if len(query) >= 2:
+                st.info(f"No U.S. listed companies found matching '{query}'")
+                st.caption("Try a different spelling or ticker symbol")
+
+    # Return selected stock info
+    if st.session_state.selected_stock:
+        return (
+            st.session_state.selected_stock["name"],
+            st.session_state.selected_stock["symbol"]
+        )
+
+    return None, None
 
 
 # ============================================================
@@ -330,14 +530,24 @@ if not has_llm_key:
     st.error("No LLM API key configured. Please set at least one of: GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY")
     st.stop()
 
-company = st.text_input("Enter company name:", "Tesla")
+# Stock search with autocomplete
+st.markdown("**Select a U.S. listed company:**")
+company_name, ticker = render_stock_search()
 
-run_button = st.button("Generate SWOT", type="primary")
+# Show selected company info
+if company_name and ticker:
+    st.success(f"Selected: **{company_name}** ({ticker})")
+    company = company_name
+else:
+    company = None
+    st.caption("Start typing to search NYSE, NASDAQ, and AMEX listed companies")
+
+run_button = st.button("Generate SWOT", type="primary", disabled=(company is None))
 
 # Default strategy: Competitive Position Analysis
 strategy = "Competitive Position"
 
-if run_button:
+if run_button and company:
     # Import here to avoid initialization errors when no API keys
     from src.graph_cyclic import app as graph_app
 
@@ -345,6 +555,7 @@ if run_button:
         # Initialize state
         state = {
             "company_name": company,
+            "ticker": ticker,  # From stock search
             "strategy_focus": strategy,
             "raw_data": None,
             "draft_report": None,

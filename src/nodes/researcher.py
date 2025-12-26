@@ -20,12 +20,13 @@ from src.utils.ticker_lookup import get_ticker, normalize_company_name
 USE_A2A_RESEARCHER = os.getenv("USE_A2A_RESEARCHER", "false").lower() == "true"
 
 
-async def _fetch_mcp_data(company: str) -> dict:
+async def _fetch_mcp_data(company: str, ticker: str = None) -> dict:
     """Async helper to fetch all MCP data (direct mode via mcp_aggregator)."""
     from a2a.mcp_aggregator import fetch_all_research_data
 
-    # Get ticker symbol from company name
-    ticker = get_ticker(company)
+    # Use provided ticker or lookup from company name
+    if not ticker:
+        ticker = get_ticker(company)
 
     if not ticker:
         print(f"Could not determine ticker for '{company}', using company name as ticker")
@@ -76,6 +77,7 @@ def researcher_node(state, workflow_id=None, progress_store=None):
     - Direct Mode (default): Calls MCP servers via mcp_client
     """
     company = state["company_name"]
+    ticker = state.get("ticker")  # Use ticker from stock search if available
 
     # Update progress if tracking is enabled
     if workflow_id and progress_store:
@@ -93,7 +95,7 @@ def researcher_node(state, workflow_id=None, progress_store=None):
             state["data_source"] = "a2a"
         else:
             print("[Direct Mode] Using MCP client")
-            result = asyncio.run(_fetch_mcp_data(company))
+            result = asyncio.run(_fetch_mcp_data(company, ticker))
 
             # Check if this was from cache
             cache_info = result.get("_cache_info", {})

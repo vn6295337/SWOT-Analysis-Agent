@@ -2,6 +2,7 @@ from typing import TypedDict, Optional, List
 
 class AgentState(TypedDict):
     company_name: str
+    ticker: Optional[str]  # Stock ticker symbol from search
     strategy_focus: str
     raw_data: Optional[str]
     draft_report: Optional[str]
