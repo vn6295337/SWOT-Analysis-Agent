@@ -216,7 +216,7 @@ export function ProcessFlow({
     from === 'executing' ? 'executing' : 'idle'
 
   return (
-    <div className="w-full bg-gray-900/50 border border-gray-800 rounded-xl p-4 overflow-x-auto">
+    <div className="w-full p-4 overflow-x-auto">
       {/*
         Grid layout:
         Row 1: Input | Cache | A2A | [Analyzer-Critic-Editor] | Output

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { Search, X, Check, Loader2 } from "lucide-react"
+import { Search, X, Check, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import { searchStocks, StockResult } from "@/lib/api"
 
 interface StockSearchProps {
@@ -25,6 +25,14 @@ export function StockSearch({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<NodeJS.Timeout>()
+  const nameScrollRef = useRef<HTMLDivElement>(null)
+
+  const scrollName = (direction: 'left' | 'right') => {
+    if (nameScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -80 : 80
+      nameScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
 
   // Debounced search
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -129,23 +137,39 @@ export function StockSearch({
   if (selectedStock) {
     return (
       <div className="relative">
-        <div className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg">
-          <Check className="w-4 h-4 text-emerald-500" />
-          <div className="flex-1 min-w-0">
-            <span className="font-medium text-foreground truncate">
+        <div className="flex items-center gap-1 px-2 py-2 bg-card border border-border rounded-lg">
+          <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+          <button
+            onClick={() => scrollName('left')}
+            className="shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
+          >
+            <ChevronLeft className="w-3 h-3 text-muted-foreground" />
+          </button>
+          <div
+            ref={nameScrollRef}
+            className="flex-1 overflow-x-auto whitespace-nowrap scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <span className="font-medium text-foreground text-sm">
               {selectedStock.name}
             </span>
-            <span className="text-muted-foreground ml-2">
+            <span className="text-muted-foreground text-sm ml-1">
               ({selectedStock.symbol})
             </span>
           </div>
-          <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded shrink-0">
+          <button
+            onClick={() => scrollName('right')}
+            className="shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
+          >
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </button>
+          <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted rounded shrink-0">
             {selectedStock.exchange}
           </span>
           {!disabled && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-muted rounded transition-colors shrink-0"
+              className="p-0.5 hover:bg-muted rounded transition-colors shrink-0"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
