@@ -13,10 +13,15 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException
+from datetime import datetime
+from pathlib import Path
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
+from src.stock_listings import get_us_stock_listings, search_stocks
 
 # Load environment variables
 load_dotenv()
@@ -45,11 +50,33 @@ app.add_middleware(
 # In-memory workflow storage
 WORKFLOWS: dict = {}
 
+# Stock listings cache (loaded once at startup)
+STOCK_LISTINGS: list = []
+
+
+@app.on_event("startup")
+async def load_stock_listings():
+    """Load stock listings on startup."""
+    global STOCK_LISTINGS
+    try:
+        STOCK_LISTINGS = get_us_stock_listings()
+        print(f"Loaded {len(STOCK_LISTINGS)} US stock listings")
+    except Exception as e:
+        print(f"Warning: Could not load stock listings: {e}")
+
 
 # Request/Response Models
 class AnalysisRequest(BaseModel):
     name: str
-    strategy_focus: str = "Cost Leadership"
+    ticker: str = ""
+    strategy_focus: str = "Competitive Position"
+
+
+class StockSearchResult(BaseModel):
+    symbol: str
+    name: str
+    exchange: str
+    match_type: str
 
 
 class WorkflowStartResponse(BaseModel):
@@ -114,7 +141,19 @@ def parse_swot_text(text: str) -> dict:
     return sections
 
 
-def run_workflow_background(workflow_id: str, company_name: str, strategy_focus: str):
+def add_activity_log(workflow_id: str, step: str, message: str):
+    """Add an entry to the workflow activity log."""
+    if workflow_id in WORKFLOWS:
+        if "activity_log" not in WORKFLOWS[workflow_id]:
+            WORKFLOWS[workflow_id]["activity_log"] = []
+        WORKFLOWS[workflow_id]["activity_log"].append({
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "step": step,
+            "message": message
+        })
+
+
+def run_workflow_background(workflow_id: str, company_name: str, ticker: str, strategy_focus: str):
     """Execute workflow in background thread with progress tracking."""
     try:
         # Import here to avoid circular imports and init issues
@@ -122,11 +161,23 @@ def run_workflow_background(workflow_id: str, company_name: str, strategy_focus:
 
         # Update status to running
         WORKFLOWS[workflow_id]["status"] = "running"
-        WORKFLOWS[workflow_id]["current_step"] = "Researcher"
+        WORKFLOWS[workflow_id]["current_step"] = "researcher"
+        add_activity_log(workflow_id, "input", f"Starting analysis for {company_name} ({ticker})")
+
+        # Initialize MCP status
+        WORKFLOWS[workflow_id]["mcp_status"] = {
+            "financials": "idle",
+            "valuation": "idle",
+            "volatility": "idle",
+            "macro": "idle",
+            "news": "idle",
+            "sentiment": "idle"
+        }
 
         # Initialize state
         state = {
             "company_name": company_name,
+            "ticker": ticker,
             "strategy_focus": strategy_focus,
             "raw_data": None,
             "draft_report": None,
@@ -180,17 +231,27 @@ async def start_analysis(request: AnalysisRequest):
     # Initialize workflow state
     WORKFLOWS[workflow_id] = {
         "status": "starting",
-        "current_step": "starting",
+        "current_step": "input",
         "revision_count": 0,
         "score": 0,
         "company_name": request.name,
-        "strategy_focus": request.strategy_focus
+        "ticker": request.ticker,
+        "strategy_focus": request.strategy_focus,
+        "activity_log": [],
+        "mcp_status": {
+            "financials": "idle",
+            "valuation": "idle",
+            "volatility": "idle",
+            "macro": "idle",
+            "news": "idle",
+            "sentiment": "idle"
+        }
     }
 
     # Start workflow in background thread
     thread = threading.Thread(
         target=run_workflow_background,
-        args=(workflow_id, request.name, request.strategy_focus),
+        args=(workflow_id, request.name, request.ticker, request.strategy_focus),
         daemon=True
     )
     thread.start()
@@ -209,7 +270,11 @@ async def get_workflow_status(workflow_id: str):
         "status": workflow.get("status", "unknown"),
         "current_step": workflow.get("current_step", "unknown"),
         "revision_count": workflow.get("revision_count", 0),
-        "score": workflow.get("score", 0)
+        "score": workflow.get("score", 0),
+        "activity_log": workflow.get("activity_log", []),
+        "mcp_status": workflow.get("mcp_status", {}),
+        "provider_used": workflow.get("provider_used"),
+        "data_source": workflow.get("data_source")
     }
 
 
@@ -239,9 +304,37 @@ async def health_check():
     }
 
 
-@app.get("/")
-async def root():
-    """Root endpoint with API info."""
+@app.get("/api/stocks/search")
+async def search_stocks_endpoint(q: str = Query(..., min_length=1, max_length=50)):
+    """Search US stock listings by symbol or company name."""
+    if not STOCK_LISTINGS:
+        # Fallback: try loading if not already loaded
+        try:
+            listings = get_us_stock_listings()
+        except Exception:
+            raise HTTPException(status_code=503, detail="Stock listings not available")
+    else:
+        listings = STOCK_LISTINGS
+
+    results = search_stocks(q, listings, max_results=10)
+
+    return {
+        "query": q,
+        "results": [
+            {
+                "symbol": r["symbol"],
+                "name": r["name"],
+                "exchange": r["exchange"],
+                "match_type": r.get("match_type", "unknown")
+            }
+            for r in results
+        ]
+    }
+
+
+@app.get("/api")
+async def api_info():
+    """API info endpoint."""
     return {
         "name": "A2A Strategy Agent API",
         "version": "2.0.0",
@@ -249,9 +342,31 @@ async def root():
             "POST /analyze - Start SWOT analysis",
             "GET /workflow/{id}/status - Get workflow progress",
             "GET /workflow/{id}/result - Get final result",
+            "GET /api/stocks/search - Search US stocks",
             "GET /health - Health check"
         ]
     }
+
+
+# Serve React frontend static files (for Docker/HF Spaces deployment)
+STATIC_DIR = Path(__file__).parent.parent / "static"
+if STATIC_DIR.exists():
+    from fastapi.responses import FileResponse
+
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    # Serve static assets
+    app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
+
+    # Fallback for SPA routing
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        file_path = STATIC_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 if __name__ == "__main__":
