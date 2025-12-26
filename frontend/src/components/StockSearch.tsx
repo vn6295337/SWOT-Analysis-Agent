@@ -129,25 +129,25 @@ export function StockSearch({
   if (selectedStock) {
     return (
       <div className="relative">
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg">
           <Check className="w-4 h-4 text-emerald-500" />
-          <div className="flex-1">
-            <span className="font-medium text-white">
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-foreground truncate">
               {selectedStock.name}
             </span>
-            <span className="text-gray-400 ml-2">
+            <span className="text-muted-foreground ml-2">
               ({selectedStock.symbol})
             </span>
           </div>
-          <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-700 rounded">
+          <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded shrink-0">
             {selectedStock.exchange}
           </span>
           {!disabled && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-gray-700 rounded transition-colors"
+              className="p-1 hover:bg-muted rounded transition-colors shrink-0"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -158,7 +158,7 @@ export function StockSearch({
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           ref={inputRef}
           type="text"
@@ -168,10 +168,10 @@ export function StockSearch({
           onFocus={() => query.length > 0 && results.length > 0 && setIsOpen(true)}
           placeholder="Search U.S. listed companies..."
           disabled={disabled}
-          className="pl-10 pr-10 bg-gray-800 border-gray-700 focus:border-primary"
+          className="pl-10 pr-10 bg-background border-input text-foreground focus:border-primary"
         />
         {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         )}
         {!isLoading && query && (
           <button
@@ -180,22 +180,18 @@ export function StockSearch({
               setResults([])
               setIsOpen(false)
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-700 rounded"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
           >
-            <X className="w-4 h-4 text-gray-400" />
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
         )}
-      </div>
-
-      <div className="mt-1 text-xs text-gray-500">
-        NYSE | NASDAQ | AMEX
       </div>
 
       {/* Dropdown */}
       {isOpen && results.length > 0 && (
         <div
           ref={listRef}
-          className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+          className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-xl overflow-hidden"
         >
           <div className="max-h-64 overflow-y-auto">
             {results.map((stock, index) => (
@@ -206,24 +202,24 @@ export function StockSearch({
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors",
                   index === highlightedIndex
-                    ? "bg-gray-700"
-                    : "hover:bg-gray-750"
+                    ? "bg-muted"
+                    : "hover:bg-muted/50"
                 )}
               >
-                <span className="font-mono font-medium text-white min-w-[60px]">
+                <span className="font-mono font-medium text-foreground min-w-[60px]">
                   {stock.symbol}
                 </span>
-                <span className="flex-1 text-sm text-gray-300 truncate">
+                <span className="flex-1 text-sm text-muted-foreground truncate">
                   {stock.name}
                 </span>
-                <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-700 rounded">
+                <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
                   {stock.exchange}
                 </span>
               </button>
             ))}
           </div>
-          <div className="px-3 py-2 border-t border-gray-700 text-xs text-gray-500">
-            Up/Down to navigate | Enter to select | Esc to close
+          <div className="px-3 py-2 border-t border-border text-xs text-muted-foreground">
+            ↑↓ navigate · Enter select · Esc close
           </div>
         </div>
       )}
