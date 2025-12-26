@@ -188,7 +188,6 @@ export function StockSearch({
       </div>
 
       <div className="mt-1 text-xs text-muted-foreground text-center">
-        NYSE | NASDAQ | AMEX
       </div>
 
       {/* Dropdown */}
