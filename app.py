@@ -332,13 +332,10 @@ if not has_llm_key:
 
 company = st.text_input("Enter company name:", "Tesla")
 
-strategy = st.selectbox(
-    "Strategic lens:",
-    ["Cost Leadership", "Differentiation", "Focus/Niche"],
-    help="Choose the strategic framework for analysis"
-)
-
 run_button = st.button("Generate SWOT", type="primary")
+
+# Default strategy: Competitive Position Analysis
+strategy = "Competitive Position"
 
 if run_button:
     # Import here to avoid initialization errors when no API keys
@@ -476,7 +473,7 @@ if run_button:
             with agent_col2:
                 st.markdown("**2. Analyst**")
                 st.caption("SWOT Synthesis")
-                st.markdown(f"Strategy: {strategy}")
+                st.markdown("Competitive analysis")
                 st.success("Draft generated")
 
             with agent_col3:
@@ -512,7 +509,7 @@ if run_button:
             pcol1, pcol2 = st.columns(2)
             with pcol1:
                 st.write(f"**Company:** {company}")
-                st.write(f"**Strategy Focus:** {strategy}")
+                st.write(f"**Analysis Type:** Competitive Position")
                 st.write(f"**Report Length:** {len(result.get('draft_report', ''))} chars")
             with pcol2:
                 provider = result.get("provider_used", "Unknown")
