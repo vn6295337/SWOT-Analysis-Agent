@@ -93,9 +93,11 @@ def _render_research_sidebar(metrics: dict):
         return
 
     # 1. FINANCIALS
-    fin = metrics.get("financials", {})
-    fin_data = fin.get("financials", {})
-    fin_date = fin_data.get("revenue", {}).get("end_date", "") if isinstance(fin_data, dict) else ""
+    fin = metrics.get("financials") or {}
+    fin_data = fin.get("financials") or {}
+    fin_date = ""
+    if isinstance(fin_data, dict) and fin_data.get("revenue"):
+        fin_date = fin_data.get("revenue", {}).get("end_date", "")
 
     st.sidebar.subheader("Financials")
     if fin_date:
@@ -116,8 +118,8 @@ def _render_research_sidebar(metrics: dict):
     st.sidebar.markdown("---")
 
     # 2. VALUATION
-    val = metrics.get("valuation", {})
-    val_date = val.get("generated_at", "")
+    val = metrics.get("valuation") or {}
+    val_date = val.get("generated_at", "") if val else ""
 
     st.sidebar.subheader("Valuation")
     if val_date:
@@ -142,8 +144,8 @@ def _render_research_sidebar(metrics: dict):
     st.sidebar.markdown("---")
 
     # 3. VOLATILITY
-    vol = metrics.get("volatility", {})
-    vol_date = vol.get("generated_at", "")
+    vol = metrics.get("volatility") or {}
+    vol_date = vol.get("generated_at", "") if vol else ""
 
     st.sidebar.subheader("Volatility")
     if vol_date:
@@ -162,9 +164,11 @@ def _render_research_sidebar(metrics: dict):
     st.sidebar.markdown("---")
 
     # 4. MACRO
-    macro = metrics.get("macro", {})
-    macro_metrics = macro.get("metrics", {})
-    macro_date = macro_metrics.get("gdp_growth", {}).get("date", "") if isinstance(macro_metrics, dict) else ""
+    macro = metrics.get("macro") or {}
+    macro_metrics = macro.get("metrics") or {}
+    macro_date = ""
+    if isinstance(macro_metrics, dict) and macro_metrics.get("gdp_growth"):
+        macro_date = macro_metrics.get("gdp_growth", {}).get("date", "")
 
     st.sidebar.subheader("Macro")
     if macro_date:
@@ -184,8 +188,8 @@ def _render_research_sidebar(metrics: dict):
     st.sidebar.markdown("---")
 
     # 5. NEWS
-    news = metrics.get("news", {})
-    news_count = len(news.get("results", []))
+    news = metrics.get("news") or {}
+    news_count = len(news.get("results") or [])
 
     st.sidebar.subheader(f"News ({news_count})")
     if "error" in news:
@@ -202,8 +206,9 @@ def _render_research_sidebar(metrics: dict):
     st.sidebar.markdown("---")
 
     # 6. SENTIMENT
-    sent = metrics.get("sentiment", {})
-    sent_date = sent.get("generated_at", "") or sent.get("metrics", {}).get("finnhub", {}).get("as_of", "")
+    sent = metrics.get("sentiment") or {}
+    sent_metrics = sent.get("metrics") or {}
+    sent_date = sent.get("generated_at", "") or (sent_metrics.get("finnhub") or {}).get("as_of", "")
 
     st.sidebar.subheader("Sentiment")
     if sent_date:
@@ -216,14 +221,13 @@ def _render_research_sidebar(metrics: dict):
         if composite is not None:
             st.sidebar.markdown(f"Overall: **{format_number(composite, 0)}/100** ({interpretation})")
 
-        sent_metrics = sent.get("metrics", {})
-        fh = sent_metrics.get("finnhub", {})
+        fh = sent_metrics.get("finnhub") or {}
         if fh and "error" not in fh:
             fh_score = fh.get("score")
             fh_articles = fh.get("articles_analyzed", 0)
             st.sidebar.markdown(f"Finnhub: **{format_number(fh_score, 0)}/100** ({fh_articles} articles)")
 
-        reddit = sent_metrics.get("reddit", {})
+        reddit = sent_metrics.get("reddit") or {}
         if reddit and "error" not in reddit:
             r_score = reddit.get("score")
             r_posts = reddit.get("posts_analyzed", 0)
