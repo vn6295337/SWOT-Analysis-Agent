@@ -1,10 +1,9 @@
 ---
-title: A2A Strategy Agent
+title: AI Strategy Copilot
 emoji: 🤖
 colorFrom: blue
 colorTo: purple
-sdk: streamlit
-app_file: app.py
+sdk: docker
 pinned: false
 ---
 
