@@ -245,11 +245,14 @@ function SVGNode({
         x={x}
         y={labelY}
         textAnchor="middle"
-        className="text-[8px] font-medium pf-text-label"
+        className={cn(
+          "font-medium",
+          isAgent ? "text-[9px] pf-text-agent" : "text-[8px] pf-text-label"
+        )}
       >
         {label}
         {label2 && (
-          <tspan x={x} dy="9">{label2}</tspan>
+          <tspan x={x} dy="10">{label2}</tspan>
         )}
       </text>
     </g>
@@ -347,9 +350,11 @@ export function ProcessFlow({
                 strokeWidth={1.4} markerEnd={`url(#arrow-${conn(editorStatus, outputStatus)})`}
                 className={cn("pf-connector", `pf-connector-${conn(editorStatus, outputStatus)}`)} />
 
-          {/* Researcher to MCP block connector */}
+          {/* Researcher ↔ MCP block connector (bidirectional) */}
           <line x1={nodeRight(NODES.researcher)} y1={ROW3_Y} x2={MCP_GROUP.x - 2} y2={ROW3_Y}
-                strokeWidth={1.4} markerEnd={`url(#arrow-${researcherStatus === 'executing' || researcherStatus === 'completed' ? 'completed' : 'idle'})`}
+                strokeWidth={1.4}
+                markerStart={`url(#arrow-start-${researcherStatus === 'executing' || researcherStatus === 'completed' ? 'completed' : 'idle'})`}
+                markerEnd={`url(#arrow-${researcherStatus === 'executing' || researcherStatus === 'completed' ? 'completed' : 'idle'})`}
                 className={cn("pf-connector", `pf-connector-${researcherStatus === 'executing' || researcherStatus === 'completed' ? 'completed' : 'idle'}`)} />
 
           {/* Bidirectional Vertical Connectors */}

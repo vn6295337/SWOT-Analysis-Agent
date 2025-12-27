@@ -397,6 +397,11 @@
   fill: var(--pf-text-label);
 }
 
+/* Agent text styling - white, larger */
+.pf-text-agent {
+  fill: #FFFFFF;
+}
+
 /* LLM Provider styles */
 .pf-llm {
   transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
