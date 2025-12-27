@@ -268,13 +268,10 @@ export function ProcessFlow({
   const nodeTop = (n: { y: number }) => n.y - NODE_SIZE / 2 - CONNECTOR_PAD
 
   return (
-    <div className="w-full">
+    <div className="w-full px-4 sm:px-6">
       <div className="w-full max-w-[700px]">
-        <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} preserveAspectRatio="xMidYMin meet" className="w-full h-auto bg-background">
+        <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} preserveAspectRatio="xMidYMin meet" className="w-full h-auto">
           <ArrowMarkers />
-
-          {/* SVG Background */}
-          <rect x="0" y="0" width={SVG_WIDTH} height={SVG_HEIGHT} fill="var(--background)" />
 
           {/* Group Backgrounds */}
           <rect {...AGENTS_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
