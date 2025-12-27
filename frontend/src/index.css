@@ -345,7 +345,9 @@
 .pf-node-skipped {
   fill: var(--pf-idle-fill);
   stroke: var(--pf-idle-stroke);
-  stroke-dasharray: 4 2;
+  stroke-dasharray: 3 2;
+  stroke-width: 1.5;
+  opacity: 0.6;
 }
 
 /* A.1 - Tier-1 agents get stronger visual weight */
@@ -415,6 +417,12 @@
 .pf-mcp-aggregate {
   stroke-width: 1.5;
   stroke-dasharray: 2 2;
+}
+
+/* MCP individual nodes - lighter treatment as data feeders */
+.pf-node-mcp {
+  stroke-width: 1.2;
+  opacity: 0.75;
 }
 
 /* Group labels */

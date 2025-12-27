@@ -292,7 +292,12 @@ export function ProcessFlow({
         <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} preserveAspectRatio="xMidYMin meet" className="w-full h-auto">
           <ArrowMarkers />
 
-          {/* Completion Halo - only when all primary steps complete */}
+          {/* Group Backgrounds */}
+          <rect {...AGENTS_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
+          <rect {...LLM_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
+          <rect {...MCP_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
+
+          {/* Completion Halo - rendered after groups for correct z-order */}
           {allDone && (
             <rect
               x={AGENTS_GROUP.x - 6}
@@ -303,11 +308,6 @@ export function ProcessFlow({
               className="pf-success-halo"
             />
           )}
-
-          {/* Group Backgrounds */}
-          <rect {...AGENTS_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
-          <rect {...LLM_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
-          <rect {...MCP_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} className="pf-mcp-aggregate" />
 
           {/* Row 1 Rightward Connectors */}
           <line x1={nodeRight(NODES.input)} y1={ROW1_Y} x2={nodeLeft(NODES.cache)} y2={ROW1_Y}
@@ -381,7 +381,7 @@ export function ProcessFlow({
                   height={LLM_HEIGHT}
                   rx={4}
                   strokeWidth={1.5}
-                  className={cn("pf-llm", status === 'executing' ? 'pf-llm-executing pf-pulse' : status === 'completed' ? 'pf-llm-completed' : 'pf-llm-idle')}
+                  className={cn("pf-llm", status === 'executing' ? 'pf-llm-executing' : status === 'completed' ? 'pf-llm-completed' : 'pf-llm-idle')}
                 />
                 <text
                   x={llm.x}
@@ -401,7 +401,7 @@ export function ProcessFlow({
             return (
               <g key={mcp.id} opacity={status === 'executing' ? 1 : status === 'completed' ? 0.7 : 0.5}>
                 <rect x={mcp.x - MCP_SIZE / 2} y={ROW3_Y - MCP_SIZE / 2} width={MCP_SIZE} height={MCP_SIZE} rx={4}
-                      className={cn("pf-node", status === 'executing' ? 'pf-node-executing pf-pulse' : status === 'completed' ? 'pf-node-completed' : 'pf-node-idle')} />
+                      className={cn("pf-node pf-node-mcp", status === 'executing' ? 'pf-node-executing pf-pulse' : status === 'completed' ? 'pf-node-completed' : 'pf-node-idle')} />
                 <text x={mcp.x} y={ROW3_Y + MCP_SIZE / 2 - 5} textAnchor="middle" className="text-[7px] font-medium pf-text-mcp">{mcp.label}</text>
               </g>
             )
