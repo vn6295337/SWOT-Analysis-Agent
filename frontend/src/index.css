@@ -342,6 +342,11 @@
 }
 
 /* Cache states */
+.pf-cache-idle {
+  fill: var(--pf-idle-fill);
+  stroke: var(--pf-idle-stroke);
+}
+
 .pf-cache-checking {
   fill: var(--pf-executing-fill);
   stroke: var(--pf-executing-stroke);

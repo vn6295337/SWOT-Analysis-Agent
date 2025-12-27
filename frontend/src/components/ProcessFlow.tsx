@@ -85,10 +85,11 @@ const MCP_SERVERS = [
 ]
 
 const AGENTS_CENTER_X = (NODES.analyzer.x + NODES.editor.x) / 2
+const LLM_GAP = 68  // LLM_WIDTH (64) + 4px spacing
 const LLM_PROVIDERS = [
-  { id: 'groq', name: 'Groq', x: AGENTS_CENTER_X - 56 },
+  { id: 'groq', name: 'Groq', x: AGENTS_CENTER_X - LLM_GAP },
   { id: 'gemini', name: 'Gemini', x: AGENTS_CENTER_X },
-  { id: 'openrouter', name: 'OpenRouter', x: AGENTS_CENTER_X + 56 },
+  { id: 'openrouter', name: 'OpenRouter', x: AGENTS_CENTER_X + LLM_GAP },
 ]
 
 const AGENTS_GROUP = {
