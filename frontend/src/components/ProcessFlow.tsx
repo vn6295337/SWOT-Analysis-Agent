@@ -47,7 +47,7 @@ const ROW_GAP = 70
 const ROW1_Y = 28                  // nudged down for stroke headroom
 const ROW2_Y = ROW1_Y + ROW_GAP   // 98
 const ROW3_Y = ROW2_Y + ROW_GAP   // 168
-const BYPASS_Y = 8                 // above agents group, within visible area
+const BYPASS_Y = -10               // above agents group, with clearance from group box top
 
 // Centering: flow occupies 75% evenly
 const SVG_WIDTH = 560
@@ -481,7 +481,7 @@ export function ProcessFlow({
 
   return (
     <div className="flex justify-center">
-      <div className="w-[75%] p-4 pt-16 flex justify-center">
+      <div className="w-[75%] p-4 flex justify-center">
         <svg
           viewBox="0 -20 560 240"
           preserveAspectRatio="xMidYMid meet"
