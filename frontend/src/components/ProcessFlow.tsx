@@ -39,9 +39,9 @@ interface ProcessFlowProps {
 // === CONSTANTS ===
 
 const NODE_SIZE = 44
-const ICON_SIZE = 14
+const ICON_SIZE = 24
 const MCP_SIZE = 36
-const MCP_ICON_SIZE = 14
+const MCP_ICON_SIZE = 20
 const LLM_WIDTH = 52
 const LLM_HEIGHT = 24
 
@@ -55,7 +55,7 @@ const ROW1_Y = 32             // Pushes top row down so Group Box fits (32 - 30 
 const ROW2_Y = ROW1_Y + ROW_GAP
 const ROW3_Y = ROW2_Y + ROW_GAP
 // SVG dimensions
-const SVG_HEIGHT = 232        // Height for 3-row layout + MCP labels below
+const SVG_HEIGHT = 245        // Height for 3-row layout + MCP labels below group box
 const SVG_WIDTH = 580
 const NODE_COUNT = 7
 const FLOW_WIDTH = GAP * (NODE_COUNT - 1) + NODE_SIZE
@@ -217,26 +217,23 @@ function SVGNode({
       />
       <foreignObject
         x={x - ICON_SIZE / 2}
-        y={y - NODE_SIZE / 2 + 9}
+        y={y - ICON_SIZE / 2}
         width={ICON_SIZE}
         height={ICON_SIZE}
       >
         <div className="flex items-center justify-center w-full h-full">
           {isExecuting ? (
-            <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+            <Loader2 className="w-5 h-5 pf-icon animate-spin" />
           ) : (
-            <Icon className="w-3.5 h-3.5 text-white" />
+            <Icon className="w-5 h-5 pf-icon" />
           )}
         </div>
       </foreignObject>
       <text
         x={x}
-        y={y + NODE_SIZE / 2 - 7}
+        y={y + NODE_SIZE / 2 + 10}
         textAnchor="middle"
-        className={cn(
-          "text-[8px] font-medium transition-colors duration-300",
-          status === 'idle' || status === 'skipped' ? 'pf-text-idle' : 'pf-text-active'
-        )}
+        className="text-[8px] font-medium pf-text-label"
       >
         {label}
       </text>
@@ -417,10 +414,10 @@ export function ProcessFlow({
                   height={MCP_ICON_SIZE}
                 >
                   <div className="flex items-center justify-center w-full h-full">
-                    <Icon className="w-3 h-3 text-white" />
+                    <Icon className="w-4 h-4 pf-icon" />
                   </div>
                 </foreignObject>
-                <text x={mcp.x} y={ROW3_Y + MCP_SIZE / 2 + 8} textAnchor="middle" className="text-[7px] font-medium pf-text-mcp">{mcp.label}</text>
+                <text x={mcp.x} y={MCP_GROUP.y + MCP_GROUP.height + 12} textAnchor="middle" className="text-[8px] font-medium pf-text-label">{mcp.label}</text>
               </g>
             )
           })}
@@ -428,18 +425,14 @@ export function ProcessFlow({
           {/* MCP Group Label */}
           <text
             x={MCP_GROUP.x + MCP_GROUP.width / 2}
-            y={MCP_GROUP.y - 4}
+            y={MCP_GROUP.y - 6}
             textAnchor="middle"
-            className="text-[7px] font-medium pf-group-label"
+            className="text-[9px] font-medium pf-group-label"
           >
             Custom MCP Servers
           </text>
         </svg>
 
-        {/* Marketing Caption */}
-        <p className="text-[10px] text-muted-foreground text-center mt-2 opacity-60">
-          Multi-agent, cache-aware, LLM-orchestrated analysis pipeline
-        </p>
       </div>
     </div>
   )

@@ -5,60 +5,8 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark mode only - no light theme */
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 221 83% 53%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
-
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
-
-    --radius: 0.5rem;
-
-    /* SWOT quadrant colors */
-    --strength: 142 76% 36%;
-    --weakness: 0 84% 60%;
-    --opportunity: 221 83% 53%;
-    --threat: 38 92% 50%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
@@ -93,6 +41,9 @@
     --input: 217 33% 17%;
     --ring: 221 83% 53%;
 
+    --radius: 0.5rem;
+
+    /* SWOT quadrant colors */
     --strength: 142 76% 36%;
     --weakness: 0 84% 60%;
     --opportunity: 221 83% 53%;
@@ -106,88 +57,51 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-  }
 
-  /* ProcessFlow SVG Colors - Light Mode */
-  :root {
-    /* Node states */
-    --pf-idle-fill: #6B7280;
-    --pf-idle-stroke: #9CA3AF;
-    --pf-executing-fill: #059669;
+    /* ProcessFlow SVG Colors - Dark theme with black containers */
+    /* Container styling: black bg, light gray border, gray icons/text */
+    --pf-idle-fill: #000000;
+    --pf-idle-stroke: #6B7280;
+    --pf-executing-fill: #000000;
     --pf-executing-stroke: #34D399;
-    --pf-completed-fill: #047857;
+    --pf-completed-fill: #000000;
     --pf-completed-stroke: #10B981;
-    --pf-failed-fill: #DC2626;
+    --pf-failed-fill: #000000;
     --pf-failed-stroke: #F87171;
 
     /* Cache states */
-    --pf-cache-hit-fill: #047857;
+    --pf-cache-hit-fill: #000000;
     --pf-cache-hit-stroke: #10B981;
-    --pf-cache-miss-fill: #D97706;
+    --pf-cache-miss-fill: #000000;
     --pf-cache-miss-stroke: #FBBF24;
 
     /* LLM providers */
-    --pf-llm-idle-fill: #6B7280;
-    --pf-llm-idle-stroke: #9CA3AF;
-    --pf-llm-active-fill: rgba(59, 130, 246, 0.8);
+    --pf-llm-idle-fill: #000000;
+    --pf-llm-idle-stroke: #6B7280;
+    --pf-llm-active-fill: #000000;
     --pf-llm-active-stroke: #3B82F6;
-    --pf-llm-completed-fill: rgba(37, 99, 235, 0.8);
+    --pf-llm-completed-fill: #000000;
     --pf-llm-completed-stroke: #2563EB;
 
-    /* Connector colors */
-    --pf-connector-idle: #9CA3AF;
-    --pf-connector-executing: #10B981;
-    --pf-connector-completed: #059669;
-
-    /* Group box */
-    --pf-group-fill: rgba(107, 114, 128, 0.1);
-    --pf-group-stroke: #9CA3AF;
-
-    /* Text colors - high contrast for legibility */
-    --pf-text-idle: #374151;
-    --pf-text-active: #111827;
-    --pf-text-mcp: #4B5563;
-    --pf-llm-text-idle: #FFFFFF;
-    --pf-llm-text-active: #FFFFFF;
-    --pf-llm-text-completed: #FFFFFF;
-  }
-
-  /* ProcessFlow SVG Colors - Dark Mode */
-  .dark {
-    --pf-idle-fill: #374151;
-    --pf-idle-stroke: #4B5563;
-    --pf-executing-fill: #059669;
-    --pf-executing-stroke: #34D399;
-    --pf-completed-fill: #047857;
-    --pf-completed-stroke: #10B981;
-    --pf-failed-fill: #DC2626;
-    --pf-failed-stroke: #F87171;
-
-    --pf-cache-hit-fill: #047857;
-    --pf-cache-hit-stroke: #10B981;
-    --pf-cache-miss-fill: #D97706;
-    --pf-cache-miss-stroke: #FBBF24;
-
-    --pf-llm-idle-fill: #374151;
-    --pf-llm-idle-stroke: #4B5563;
-    --pf-llm-active-fill: rgba(30, 64, 175, 0.7);
-    --pf-llm-active-stroke: #3B82F6;
-    --pf-llm-completed-fill: rgba(30, 58, 138, 0.7);
-    --pf-llm-completed-stroke: #2563EB;
-
+    /* Connector colors - unchanged */
     --pf-connector-idle: #4B5563;
     --pf-connector-executing: #34D399;
     --pf-connector-completed: #10B981;
 
+    /* Group box - unchanged */
     --pf-group-fill: rgba(31, 41, 55, 0.3);
     --pf-group-stroke: #4B5563;
 
+    /* Text and icon colors - gray */
+    --pf-icon-color: #9CA3AF;
+    --pf-text-label: #9CA3AF;
     --pf-text-idle: #9CA3AF;
-    --pf-text-active: #E5E7EB;
-    --pf-text-mcp: #D1D5DB;
+    --pf-text-active: #9CA3AF;
+    --pf-text-mcp: #9CA3AF;
     --pf-llm-text-idle: #9CA3AF;
-    --pf-llm-text-active: #BFDBFE;
-    --pf-llm-text-completed: #93C5FD;
+    --pf-llm-text-active: #9CA3AF;
+    --pf-llm-text-completed: #9CA3AF;
+    --pf-group-label: #9CA3AF;
   }
 }
 
@@ -465,8 +379,17 @@
 
 /* Group labels */
 .pf-group-label {
-  fill: var(--pf-text-idle);
-  opacity: 0.7;
+  fill: var(--pf-group-label);
+}
+
+/* Icon styling - gray */
+.pf-icon {
+  color: var(--pf-icon-color);
+}
+
+/* Text label styling - gray */
+.pf-text-label {
+  fill: var(--pf-text-label);
 }
 
 /* LLM Provider styles */
