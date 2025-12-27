@@ -44,10 +44,10 @@ const GROUP_PAD = 8      // fix #7: consistent group box padding
 
 // Row Y positions (uniform 70px gaps)
 const ROW_GAP = 70
-const ROW1_Y = 24                  // pulled up from 38
-const ROW2_Y = ROW1_Y + ROW_GAP   // 94
-const ROW3_Y = ROW2_Y + ROW_GAP   // 164
-const BYPASS_Y = 0                 // top edge of SVG
+const ROW1_Y = 28                  // nudged down for stroke headroom
+const ROW2_Y = ROW1_Y + ROW_GAP   // 98
+const ROW3_Y = ROW2_Y + ROW_GAP   // 168
+const BYPASS_Y = 8                 // above agents group, within visible area
 
 // Centering: flow occupies 75% evenly
 const SVG_WIDTH = 560
@@ -481,10 +481,10 @@ export function ProcessFlow({
     <div className="flex justify-center">
       <div className="w-[75%] p-4 flex justify-center">
         <svg
-          viewBox="0 0 560 210"
+          viewBox="0 -10 560 220"
           preserveAspectRatio="xMidYMid meet"
           className="w-full max-w-[700px]"
-          style={{ minHeight: '210px' }}
+          style={{ minHeight: '220px' }}
         >
           <ArrowMarkers />
 
