@@ -43,12 +43,15 @@ const GAP = 72
 const CONNECTOR_PAD = 2
 const GROUP_PAD = 8
 
-const ROW_GAP = 70
-const ROW1_Y = 12
+// ADJUSTED VALUES FOR TIGHT FIT
+const ROW_GAP = 68            // Slight reduction to tighten vertical flow
+const ROW1_Y = 32             // Pushes top row down so Group Box fits (32 - 30 = 2px from top)
 const ROW2_Y = ROW1_Y + ROW_GAP
 const ROW3_Y = ROW2_Y + ROW_GAP
-const BYPASS_Y = 2
+const BYPASS_Y = 10           // Safe margin for bypass line
 
+// SVG dimensions
+const SVG_HEIGHT = 200        // Reduced from 240 to remove bottom whitespace
 const SVG_WIDTH = 560
 const NODE_COUNT = 7
 const FLOW_WIDTH = GAP * (NODE_COUNT - 1) + NODE_SIZE
@@ -267,7 +270,7 @@ export function ProcessFlow({
   return (
     <div className="flex justify-center w-full">
       <div className="w-full max-w-[700px]">
-        <svg viewBox="0 0 560 240" preserveAspectRatio="xMidYMin meet" className="w-full h-auto">
+        <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} preserveAspectRatio="xMidYMin meet" className="w-full h-auto">
           <ArrowMarkers />
 
           {/* Group Backgrounds */}
