@@ -484,7 +484,7 @@ export function ProcessFlow({
       <div className="w-[75%] flex justify-center">
         <svg
           viewBox="0 0 560 240"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio="xMidYMin meet"
           className="w-full max-w-[700px]"
           style={{ minHeight: '240px' }}
         >
