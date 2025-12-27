@@ -390,12 +390,14 @@ function ArrowPath({
   strokeWidth = 1.4,
   opacity = 1,
   strokeDasharray,
+  showArrow = true,
 }: {
   d: string
   status: NodeStatus
   strokeWidth?: number
   opacity?: number
   strokeDasharray?: string
+  showArrow?: boolean
 }) {
   return (
     <path
@@ -404,7 +406,7 @@ function ArrowPath({
       fill="none"
       opacity={opacity}
       strokeDasharray={strokeDasharray}
-      markerEnd={`url(#arrow-${status})`}
+      markerEnd={showArrow ? `url(#arrow-${status})` : undefined}
       className={getConnectorClass(status)}
     />
   )
@@ -481,16 +483,16 @@ export function ProcessFlow({
     <div className="flex justify-center">
       <div className="w-[75%] p-4 flex justify-center">
         <svg
-          viewBox="0 -10 560 220"
+          viewBox="0 -20 560 240"
           preserveAspectRatio="xMidYMid meet"
           className="w-full max-w-[700px]"
-          style={{ minHeight: '220px' }}
+          style={{ minHeight: '240px' }}
         >
           <ArrowMarkers />
 
           {/* === CONNECTORS === */}
 
-          {/* Fix #9: Cache bypass - demoted (strokeWidth=1, opacity=0.25, dashed) */}
+          {/* Cache bypass - only show arrow when completed (avoids marker clipping when idle) */}
           <ArrowPath
             d={`M ${NODES.cache.x} ${nodeTop(NODES.cache)}
                 L ${NODES.cache.x} ${BYPASS_Y}
@@ -500,6 +502,7 @@ export function ProcessFlow({
             strokeWidth={1}
             opacity={0.25}
             strokeDasharray="2 3"
+            showArrow={bypassStatus === 'completed'}
           />
 
           {/* Main flow: Input → Cache → A2A → [Agents] → Output */}
