@@ -47,7 +47,7 @@ const ROW_GAP = 70
 const ROW1_Y = 38
 const ROW2_Y = ROW1_Y + ROW_GAP   // 108
 const ROW3_Y = ROW2_Y + ROW_GAP   // 178
-const BYPASS_Y = 8                 // above agents group box
+const BYPASS_Y = 4                 // above agents group box (top at y=8)
 
 // Centering: flow occupies 75% evenly
 const SVG_WIDTH = 560
@@ -477,12 +477,12 @@ export function ProcessFlow({
   const nodeTop = (n: { y: number }) => n.y - NODE_SIZE / 2 - CONNECTOR_PAD
 
   return (
-    <div className="flex">
-      <div className="w-[75%] p-4 overflow-x-auto">
+    <div className="flex justify-center">
+      <div className="w-[75%] p-4 flex justify-center">
         <svg
           viewBox="0 0 560 240"
           preserveAspectRatio="xMidYMid meet"
-          className="w-full"
+          className="w-full max-w-[700px]"
           style={{ minHeight: '240px' }}
         >
           <ArrowMarkers />
