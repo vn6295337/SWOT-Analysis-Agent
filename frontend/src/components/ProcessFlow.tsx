@@ -481,7 +481,7 @@ export function ProcessFlow({
 
   return (
     <div className="flex justify-center">
-      <div className="w-[75%] p-4 flex justify-center">
+      <div className="w-[75%] p-4 pt-16 flex justify-center">
         <svg
           viewBox="0 -20 560 240"
           preserveAspectRatio="xMidYMid meet"
