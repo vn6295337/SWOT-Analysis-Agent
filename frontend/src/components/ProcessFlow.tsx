@@ -189,7 +189,7 @@ function SVGNode({
   isAgent?: boolean
 }) {
   const isExecuting = status === 'executing' || cacheState === 'checking'
-  const opacity = status === 'idle' && !cacheState ? 0.5 : status === 'skipped' ? 0.4 : 1
+  const opacity = status === 'idle' && !cacheState ? 0.7 : status === 'skipped' ? 0.7 : 1
   const strokeWidth = isAgent ? 2.5 : 2
 
   return (
@@ -266,6 +266,13 @@ export function ProcessFlow({
     return 'idle'
   }, [currentStep, completedSteps, cacheHit])
 
+  // Completion halo: all primary steps done
+  const allDone = useMemo(() =>
+    ['input', 'cache', 'a2a', 'analyzer', 'critic', 'editor', 'output']
+      .every(s => completedSteps.map(normalizeStep).includes(s)),
+    [completedSteps]
+  )
+
   const conn = (from: NodeStatus | CacheState, to: NodeStatus): NodeStatus => {
     if (from === 'completed' || from === 'miss' || from === 'hit') {
         return to === 'idle' ? 'idle' : to === 'executing' ? 'executing' : 'completed'
@@ -285,10 +292,22 @@ export function ProcessFlow({
         <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} preserveAspectRatio="xMidYMin meet" className="w-full h-auto">
           <ArrowMarkers />
 
+          {/* Completion Halo - only when all primary steps complete */}
+          {allDone && (
+            <rect
+              x={AGENTS_GROUP.x - 6}
+              y={AGENTS_GROUP.y - 6}
+              width={AGENTS_GROUP.width + 12}
+              height={AGENTS_GROUP.height + 12}
+              rx={10}
+              className="pf-success-halo"
+            />
+          )}
+
           {/* Group Backgrounds */}
           <rect {...AGENTS_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
           <rect {...LLM_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
-          <rect {...MCP_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
+          <rect {...MCP_GROUP} rx={8} fill="none" stroke="var(--pf-group-stroke)" strokeWidth={1} strokeDasharray="4 3" opacity={0.35} className="pf-mcp-aggregate" />
 
           {/* Row 1 Rightward Connectors */}
           <line x1={nodeRight(NODES.input)} y1={ROW1_Y} x2={nodeLeft(NODES.cache)} y2={ROW1_Y}
@@ -330,12 +349,11 @@ export function ProcessFlow({
                 markerEnd={`url(#arrow-${conn(a2aStatus, researcherStatus)})`}
                 className={cn("pf-connector", `pf-connector-${a2aStatus === 'completed' || researcherStatus === 'completed' ? 'completed' : a2aStatus === 'executing' || researcherStatus === 'executing' ? 'executing' : 'idle'}`)} />
 
-          {/* Agent Group ↔ LLM Group */}
+          {/* Agent Group ↔ LLM Group (Orchestration connector) */}
           <line x1={AGENTS_CENTER_X} y1={AGENTS_GROUP.y + AGENTS_GROUP.height + 2} x2={AGENTS_CENTER_X} y2={LLM_GROUP.y - 2}
-                strokeWidth={1.4}
                 markerStart={`url(#arrow-start-${analyzerStatus === 'executing' || criticStatus === 'executing' || editorStatus === 'executing' ? 'executing' : analyzerStatus === 'completed' ? 'completed' : 'idle'})`}
                 markerEnd={`url(#arrow-${analyzerStatus === 'executing' || criticStatus === 'executing' || editorStatus === 'executing' ? 'executing' : analyzerStatus === 'completed' ? 'completed' : 'idle'})`}
-                className={cn("pf-connector", `pf-connector-${analyzerStatus === 'executing' || criticStatus === 'executing' || editorStatus === 'executing' ? 'executing' : analyzerStatus === 'completed' ? 'completed' : 'idle'}`)} />
+                className={cn("pf-connector pf-orchestration", `pf-connector-${analyzerStatus === 'executing' || criticStatus === 'executing' || editorStatus === 'executing' ? 'executing' : analyzerStatus === 'completed' ? 'completed' : 'idle'}`)} />
 
           {/* Nodes */}
           <SVGNode x={NODES.input.x} y={NODES.input.y} icon={User} label="User Input" status={inputStatus} />
@@ -381,14 +399,29 @@ export function ProcessFlow({
           {MCP_SERVERS.map((mcp) => {
             const status = researcherStatus === 'executing' ? 'executing' : researcherStatus === 'completed' ? 'completed' : 'idle';
             return (
-              <g key={mcp.id} opacity={status === 'executing' ? 1 : status === 'completed' ? 0.6 : 0.3}>
+              <g key={mcp.id} opacity={status === 'executing' ? 1 : status === 'completed' ? 0.7 : 0.5}>
                 <rect x={mcp.x - MCP_SIZE / 2} y={ROW3_Y - MCP_SIZE / 2} width={MCP_SIZE} height={MCP_SIZE} rx={4}
                       className={cn("pf-node", status === 'executing' ? 'pf-node-executing pf-pulse' : status === 'completed' ? 'pf-node-completed' : 'pf-node-idle')} />
                 <text x={mcp.x} y={ROW3_Y + MCP_SIZE / 2 - 5} textAnchor="middle" className="text-[7px] font-medium pf-text-mcp">{mcp.label}</text>
               </g>
             )
           })}
+
+          {/* MCP Group Label */}
+          <text
+            x={MCP_GROUP.x + MCP_GROUP.width / 2}
+            y={MCP_GROUP.y - 4}
+            textAnchor="middle"
+            className="text-[7px] font-medium pf-group-label"
+          >
+            External Signals (MCP)
+          </text>
         </svg>
+
+        {/* Marketing Caption */}
+        <p className="text-[10px] text-muted-foreground text-center mt-2 opacity-60">
+          Multi-agent, cache-aware, LLM-orchestrated analysis pipeline
+        </p>
       </div>
     </div>
   )

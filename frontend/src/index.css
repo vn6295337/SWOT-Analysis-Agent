@@ -351,6 +351,12 @@
 /* A.1 - Tier-1 agents get stronger visual weight */
 .pf-agent {
   stroke-width: 2.5;
+  rx: 6;
+}
+
+/* Agent executing state with drop-shadow for sophistication */
+.pf-agent.pf-node-executing {
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.7));
 }
 
 /* Cache states */
@@ -384,6 +390,37 @@
 
 .pf-connector-completed {
   stroke: var(--pf-connector-completed);
+}
+
+/* Orchestration connector - coordinated reasoning signal */
+.pf-orchestration {
+  stroke-dasharray: 6 3;
+  stroke-width: 2;
+}
+
+/* Success halo - completion confidence signal */
+.pf-success-halo {
+  stroke: rgba(34, 197, 94, 0.6);
+  stroke-width: 2;
+  fill: none;
+  animation: successGlow 2s ease-in-out infinite;
+}
+
+@keyframes successGlow {
+  0%, 100% { stroke-opacity: 0.6; }
+  50% { stroke-opacity: 1; }
+}
+
+/* MCP aggregate - capability layer styling */
+.pf-mcp-aggregate {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+
+/* Group labels */
+.pf-group-label {
+  fill: var(--pf-text-idle);
+  opacity: 0.7;
 }
 
 /* LLM Provider styles */
@@ -450,6 +487,15 @@
 @keyframes pfPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+/* Animation discipline: completed states = static confidence */
+.pf-node-completed {
+  animation: none !important;
+}
+
+.pf-llm-completed {
+  animation: none !important;
 }
 
 /* Smooth scrollbar */
